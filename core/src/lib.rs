@@ -93,3 +93,7 @@ pub mod prelude;
 pub mod primitives;
 
 pub use drawable::{Drawable, Pixel};
+
+#[cfg(test)]
+#[path = "../../tests/support/mod.rs"]
+mod test_support;

@@ -1,3 +1,7 @@
+#[path = "../tests/support/mod.rs"]
+mod test_support;
+use test_support::FutureExt as _;
+
 use criterion::*;
 use embedded_graphics::{geometry::AngleUnit, pixelcolor::Gray8, prelude::*, primitives::*};
 
@@ -11,7 +15,7 @@ fn arc(c: &mut Criterion) {
             .into_styled(PrimitiveStyle::with_stroke(Gray8::new(1), 1));
 
         let mut framebuffer = Framebuffer::new();
-        b.iter(|| object.draw(&mut framebuffer))
+        b.iter(|| object.draw(&mut framebuffer).ready())
     });
 }
 
@@ -21,7 +25,7 @@ fn sector(c: &mut Criterion) {
             .into_styled(PrimitiveStyle::with_stroke(Gray8::new(1), 1));
 
         let mut framebuffer = Framebuffer::new();
-        b.iter(|| object.draw(&mut framebuffer))
+        b.iter(|| object.draw(&mut framebuffer).ready())
     });
 }
 
@@ -31,7 +35,7 @@ fn filled_sector(c: &mut Criterion) {
             .into_styled(PrimitiveStyle::with_fill(Gray8::new(1)));
 
         let mut framebuffer = Framebuffer::new();
-        b.iter(|| object.draw(&mut framebuffer))
+        b.iter(|| object.draw(&mut framebuffer).ready())
     });
 }
 

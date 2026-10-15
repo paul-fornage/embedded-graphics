@@ -24,6 +24,7 @@ pub trait DrawTargetExt: DrawTarget + Sized {
     /// # Examples
     ///
     /// ```
+    /// # let _ = async {
     /// use embedded_graphics::{
     ///     mock_display::MockDisplay,
     ///     mono_font::{ascii::FONT_6X9, MonoTextStyle},
@@ -38,15 +39,16 @@ pub trait DrawTargetExt: DrawTarget + Sized {
     /// let style = MonoTextStyle::new(&FONT_6X9, BinaryColor::On);
     ///
     /// // Draws text at position (5, 10) in the display coordinate system
-    /// Text::new("Text", Point::zero(), style).draw(&mut translated_display)?;
+    /// Text::new("Text", Point::zero(), style).draw(&mut translated_display).await?;
     /// #
     /// # let mut expected = MockDisplay::new();
     /// #
-    /// # Text::new("Text", Point::new(5, 10), style).draw(&mut expected)?;
+    /// # Text::new("Text", Point::new(5, 10), style).draw(&mut expected).await?;
     /// #
     /// # display.assert_eq(&expected);
     /// #
     /// # Ok::<(), core::convert::Infallible>(())
+    /// # };
     /// ```
     fn translated(&mut self, offset: Point) -> Translated<'_, Self>;
 
@@ -65,6 +67,7 @@ pub trait DrawTargetExt: DrawTarget + Sized {
     /// # Examples
     ///
     /// ```
+    /// # let _ = async {
     /// use embedded_graphics::{
     ///     mock_display::MockDisplay,
     ///     mono_font::{ascii::FONT_6X9, MonoTextStyle},
@@ -75,11 +78,11 @@ pub trait DrawTargetExt: DrawTarget + Sized {
     /// };
     ///
     /// /// Fills a draw target with a blue background and prints centered yellow text.
-    /// fn draw_text<T>(target: &mut T, text: &str) -> Result<(), T::Error>
+    /// async fn draw_text<T>(target: &mut T, text: &str) -> Result<(), T::Error>
     /// where
     ///     T: DrawTarget<Color = Rgb565>,
     /// {
-    ///     target.clear(Rgb565::BLUE)?;
+    ///     target.clear(Rgb565::BLUE).await?;
     ///
     ///     let text_position = target.bounding_box().center();
     ///
@@ -89,7 +92,7 @@ pub trait DrawTargetExt: DrawTarget + Sized {
     ///         .baseline(Baseline::Middle)
     ///         .build();
     ///
-    ///     Text::with_text_style(text, text_position, character_style, text_style).draw(target)?;
+    ///     Text::with_text_style(text, text_position, character_style, text_style).draw(target).await?;
     ///
     ///     Ok(())
     /// }
@@ -100,9 +103,10 @@ pub trait DrawTargetExt: DrawTarget + Sized {
     /// let area = Rectangle::new(Point::new(5, 10), Size::new(40, 15));
     /// let mut cropped_display = display.cropped(&area);
     ///
-    /// draw_text(&mut cropped_display, "Text")?;
+    /// draw_text(&mut cropped_display, "Text").await?;
     /// #
     /// # Ok::<(), core::convert::Infallible>(())
+    /// # };
     /// ```
     fn cropped(&mut self, area: &Rectangle) -> Cropped<'_, Self>;
 
@@ -119,6 +123,7 @@ pub trait DrawTargetExt: DrawTarget + Sized {
     /// # Examples
     ///
     /// ```
+    /// # let _ = async {
     /// use embedded_graphics::{
     ///     mock_display::MockDisplay,
     ///     mono_font::{ascii::FONT_10X20, MonoTextStyle},
@@ -137,15 +142,16 @@ pub trait DrawTargetExt: DrawTarget + Sized {
     ///
     /// // Only the first 4 characters will be drawn, because the others are outside
     /// // the clipping area
-    /// Text::new("Clipped", Point::new(0, 15), style).draw(&mut clipped_display)?;
+    /// Text::new("Clipped", Point::new(0, 15), style).draw(&mut clipped_display).await?;
     /// #
     /// # let mut expected = MockDisplay::new();
     /// #
-    /// # Text::new("Clip", Point::new(0, 15), style).draw(&mut expected)?;
+    /// # Text::new("Clip", Point::new(0, 15), style).draw(&mut expected).await?;
     /// #
     /// # display.assert_eq(&expected);
     /// #
     /// # Ok::<(), core::convert::Infallible>(())
+    /// # };
     /// ```
     fn clipped(&mut self, area: &Rectangle) -> Clipped<'_, Self>;
 
@@ -167,6 +173,7 @@ pub trait DrawTargetExt: DrawTarget + Sized {
     /// This example draws a `BinaryColor` image to an `Rgb888` display.
     ///
     /// ```
+    /// # let _ = async {
     /// use embedded_graphics::{
     ///     image::{Image, ImageRaw},
     ///     mock_display::MockDisplay,
@@ -194,7 +201,7 @@ pub trait DrawTargetExt: DrawTarget + Sized {
     /// // image.draw(&mut display)?;
     ///
     /// // To fix this `color_converted` is added to enable color conversion.
-    /// image.draw(&mut display.color_converted())?;
+    /// image.draw(&mut display.color_converted()).await?;
     /// #
     /// # let mut expected = MockDisplay::from_pattern(&[
     /// #     "WWWW", //
@@ -206,6 +213,7 @@ pub trait DrawTargetExt: DrawTarget + Sized {
     /// # display.assert_eq(&expected);
     /// #
     /// # Ok::<(), core::convert::Infallible>(())
+    /// # };
     /// ```
     fn color_converted<C>(&mut self) -> ColorConverted<'_, Self, C>
     where
@@ -238,6 +246,7 @@ where
 
 #[cfg(test)]
 mod tests {
+    use crate::test_support::FutureExt as _;
     use crate::{
         draw_target::{DrawTarget, DrawTargetExt},
         geometry::{Dimensions, Point, Size},
@@ -266,7 +275,7 @@ mod tests {
             Pixel(Point::new(2, 4), BinaryColor::Off),
             Pixel(Point::new(2, 5), BinaryColor::Off),
         ];
-        clipped.draw_iter(pixels.iter().copied()).unwrap();
+        clipped.draw_iter(pixels.iter().copied()).ready().unwrap();
 
         display.assert_pattern(&[
             "    ", //
@@ -293,6 +302,7 @@ mod tests {
         let area = Rectangle::new(Point::new(1, 2), Size::new(5, 4));
         clipped
             .fill_contiguous(&area, colors.iter().map(|c| BinaryColor::from(*c != 0)))
+            .ready()
             .unwrap();
 
         display.assert_pattern(&[
@@ -312,7 +322,7 @@ mod tests {
         let mut clipped = display.clipped(&area);
 
         let area = Rectangle::new(Point::new(2, 1), Size::new(6, 4));
-        clipped.fill_solid(&area, BinaryColor::On).unwrap();
+        clipped.fill_solid(&area, BinaryColor::On).ready().unwrap();
 
         display.assert_pattern(&[
             "       ", //
@@ -328,11 +338,12 @@ mod tests {
 
         let area = Rectangle::new(Point::new(1, 3), Size::new(3, 4));
         let mut clipped = display.clipped(&area);
-        clipped.clear(BinaryColor::On).unwrap();
+        clipped.clear(BinaryColor::On).ready().unwrap();
 
         let mut expected = MockDisplay::new();
         area.into_styled(PrimitiveStyle::with_fill(BinaryColor::On))
             .draw(&mut expected)
+            .ready()
             .unwrap();
 
         display.assert_eq(&expected);

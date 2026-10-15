@@ -38,6 +38,7 @@ pub const fn buffer_size_bpp(width: usize, height: usize, bpp: usize) -> usize {
 /// # Examples
 ///
 /// ```
+/// # let _ = async {
 /// use embedded_graphics::{
 ///     framebuffer,
 ///     framebuffer::{Framebuffer, buffer_size},
@@ -50,8 +51,9 @@ pub const fn buffer_size_bpp(width: usize, height: usize, bpp: usize) -> usize {
 ///
 /// fb.bounding_box()
 ///     .into_styled(PrimitiveStyle::with_stroke(Rgb565::RED, 1))
-///     .draw(&mut fb)
+///     .draw(&mut fb).await
 ///     .unwrap();
+/// # };
 /// ```
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Clone)]
 pub struct Framebuffer<C, R, BO, const WIDTH: usize, const HEIGHT: usize, const N: usize> {
@@ -175,7 +177,7 @@ macro_rules! impl_bit {
             type Color = C;
             type Error = Infallible;
 
-            fn draw_iter<I>(&mut self, pixels: I) -> Result<(), Self::Error>
+            async fn draw_iter<I>(&mut self, pixels: I) -> Result<(), Self::Error>
             where
                 I: IntoIterator<Item = Pixel<Self::Color>>,
             {
@@ -221,7 +223,7 @@ where
     type Color = C;
     type Error = Infallible;
 
-    fn draw_iter<I>(&mut self, pixels: I) -> Result<(), Self::Error>
+    async fn draw_iter<I>(&mut self, pixels: I) -> Result<(), Self::Error>
     where
         I: IntoIterator<Item = Pixel<Self::Color>>,
     {
@@ -268,7 +270,7 @@ macro_rules! impl_bytes {
             type Color = C;
             type Error = Infallible;
 
-            fn draw_iter<I>(&mut self, pixels: I) -> Result<(), Self::Error>
+            async fn draw_iter<I>(&mut self, pixels: I) -> Result<(), Self::Error>
             where
                 I: IntoIterator<Item = Pixel<Self::Color>>,
             {
@@ -319,7 +321,7 @@ macro_rules! impl_load_store_bytes {
             type Color = C;
             type Error = Infallible;
 
-            fn draw_iter<I>(&mut self, pixels: I) -> Result<(), Self::Error>
+            async fn draw_iter<I>(&mut self, pixels: I) -> Result<(), Self::Error>
             where
                 I: IntoIterator<Item = Pixel<Self::Color>>,
             {
@@ -353,6 +355,7 @@ impl<C, R, BO, const WIDTH: usize, const HEIGHT: usize, const N: usize> OriginDi
 
 #[cfg(test)]
 mod tests {
+    use crate::test_support::FutureExt as _;
     use embedded_graphics_core::prelude::GrayColor;
 
     use super::*;
@@ -430,6 +433,7 @@ mod tests {
             .iter()
             .map(|(p, c)| Pixel(Point::from(*p), *c)),
         )
+        .ready()
         .unwrap();
 
         assert_eq!(
@@ -460,6 +464,7 @@ mod tests {
             .iter()
             .map(|(p, c)| Pixel(Point::from(*p), Gray2::new(*c))),
         )
+        .ready()
         .unwrap();
 
         assert_eq!(
@@ -491,6 +496,7 @@ mod tests {
             .iter()
             .map(|(p, c)| Pixel(Point::from(*p), Gray4::new(*c))),
         )
+        .ready()
         .unwrap();
 
         assert_eq!(
@@ -520,6 +526,7 @@ mod tests {
             .iter()
             .map(|(p, c)| Pixel(Point::from(*p), Gray8::new(*c))),
         )
+        .ready()
         .unwrap();
 
         assert_eq!(
@@ -549,6 +556,7 @@ mod tests {
             .iter()
             .map(|(p, c)| Pixel(Point::from(*p), Rgb444::from(RawU12::new(*c)))),
         )
+        .ready()
         .unwrap();
 
         assert_eq!(
@@ -581,6 +589,7 @@ mod tests {
             .iter()
             .map(|(p, c)| Pixel(Point::from(*p), Rgb444::from(RawU12::new(*c)))),
         )
+        .ready()
         .unwrap();
 
         assert_eq!(
@@ -610,6 +619,7 @@ mod tests {
             .iter()
             .map(|(p, c)| Pixel(Point::from(*p), Rgb565::from(RawU16::new(*c)))),
         )
+        .ready()
         .unwrap();
 
         assert_eq!(
@@ -639,6 +649,7 @@ mod tests {
             .iter()
             .map(|(p, c)| Pixel(Point::from(*p), Rgb565::from(RawU16::new(*c)))),
         )
+        .ready()
         .unwrap();
 
         assert_eq!(
@@ -668,6 +679,7 @@ mod tests {
             .iter()
             .map(|(p, c)| Pixel(Point::from(*p), Rgb888::from(RawU24::new(*c)))),
         )
+        .ready()
         .unwrap();
 
         assert_eq!(
@@ -697,6 +709,7 @@ mod tests {
             .iter()
             .map(|(p, c)| Pixel(Point::from(*p), Rgb888::from(RawU24::new(*c)))),
         )
+        .ready()
         .unwrap();
 
         assert_eq!(
@@ -726,6 +739,7 @@ mod tests {
             .iter()
             .map(|(p, c)| Pixel(Point::from(*p), U32Color::from(RawU32::new(*c)))),
         )
+        .ready()
         .unwrap();
 
         assert_eq!(
@@ -755,6 +769,7 @@ mod tests {
             .iter()
             .map(|(p, c)| Pixel(Point::from(*p), U32Color::from(RawU32::new(*c)))),
         )
+        .ready()
         .unwrap();
 
         assert_eq!(
@@ -773,6 +788,7 @@ mod tests {
         fb.bounding_box()
             .into_styled(PrimitiveStyle::with_stroke(BinaryColor::On, 1))
             .draw(&mut fb)
+            .ready()
             .unwrap();
 
         fb.draw_iter(
@@ -780,11 +796,13 @@ mod tests {
                 .into_iter()
                 .map(|p| Pixel(Point::from(p), BinaryColor::On)),
         )
+        .ready()
         .unwrap();
 
         let mut display = MockDisplay::<BinaryColor>::new();
         Image::new(&fb.as_image(), Point::new(2, 1))
             .draw(&mut display)
+            .ready()
             .unwrap();
 
         display.assert_pattern(&[
@@ -811,6 +829,7 @@ mod tests {
                 .into_iter()
                 .map(|p| Pixel(Point::from(p), BinaryColor::On)),
         )
+        .ready()
         .unwrap();
 
         let expected = [

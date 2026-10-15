@@ -114,11 +114,11 @@ impl<T: StyledDrawable<S>, S> Drawable for Styled<T, S> {
     type Color = T::Color;
     type Output = T::Output;
 
-    fn draw<D>(&self, target: &mut D) -> Result<Self::Output, D::Error>
+    async fn draw<D>(&self, target: &mut D) -> Result<Self::Output, D::Error>
     where
         D: DrawTarget<Color = Self::Color>,
     {
-        self.primitive.draw_styled(&self.style, target)
+        self.primitive.draw_styled(&self.style, target).await
     }
 }
 
@@ -138,6 +138,7 @@ impl<T: Transform, S: Clone> Transform for Styled<T, S> {
 }
 
 /// Styled drawable.
+#[allow(async_fn_in_trait)] // Futures may stay on the local embedded executor.
 pub trait StyledDrawable<S> {
     /// Color type.
     type Color: PixelColor;
@@ -145,7 +146,7 @@ pub trait StyledDrawable<S> {
     type Output;
 
     /// Draws the primitive using the given style.
-    fn draw_styled<D>(&self, style: &S, target: &mut D) -> Result<Self::Output, D::Error>
+    async fn draw_styled<D>(&self, style: &S, target: &mut D) -> Result<Self::Output, D::Error>
     where
         D: DrawTarget<Color = Self::Color>;
 }

@@ -28,6 +28,7 @@ pub use styled::StyledPixelsIterator;
 /// ## Create some lines with different styles
 ///
 /// ```rust
+/// # let _ = async {
 /// use embedded_graphics::{
 ///     pixelcolor::Rgb565, prelude::*, primitives::{Line, PrimitiveStyle},
 /// };
@@ -37,14 +38,15 @@ pub use styled::StyledPixelsIterator;
 /// // Red 1 pixel wide line from (50, 20) to (60, 35)
 /// Line::new(Point::new(50, 20), Point::new(60, 35))
 ///     .into_styled(PrimitiveStyle::with_stroke(Rgb565::RED, 1))
-///     .draw(&mut display)?;
+///     .draw(&mut display).await?;
 ///
 /// // Green 10 pixel wide line with translation applied
 /// Line::new(Point::new(50, 20), Point::new(60, 35))
 ///     .translate(Point::new(-30, 10))
 ///     .into_styled(PrimitiveStyle::with_stroke(Rgb565::GREEN, 10))
-///     .draw(&mut display)?;
+///     .draw(&mut display).await?;
 /// # Ok::<(), core::convert::Infallible>(())
+/// # };
 /// ```
 #[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Default)]
 #[cfg_attr(feature = "defmt", derive(::defmt::Format))]
@@ -226,6 +228,7 @@ impl Transform for Line {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::test_support::FutureExt as _;
     use crate::{
         geometry::Size, mock_display::MockDisplay, pixelcolor::BinaryColor,
         primitives::PrimitiveStyle, Drawable, Pixel,
@@ -268,6 +271,7 @@ mod tests {
         Line::new(Point::new(2, 2), Point::new(20, 8))
             .into_styled(PrimitiveStyle::with_stroke(BinaryColor::On, 5))
             .draw(&mut display)
+            .ready()
             .unwrap();
 
         display.assert_pattern(&[
@@ -293,12 +297,14 @@ mod tests {
         Line::new(Point::new(2, 2), Point::new(10, 2))
             .into_styled(PrimitiveStyle::with_stroke(BinaryColor::On, 2))
             .draw(&mut display)
+            .ready()
             .unwrap();
 
         // Vertical line
         Line::new(Point::new(2, 5), Point::new(2, 10))
             .into_styled(PrimitiveStyle::with_stroke(BinaryColor::Off, 2))
             .draw(&mut display)
+            .ready()
             .unwrap();
 
         display.assert_pattern(&[
@@ -324,6 +330,7 @@ mod tests {
         Line::new(Point::new(3, 2), Point::new(10, 9))
             .into_styled(PrimitiveStyle::with_stroke(BinaryColor::On, 7))
             .draw(&mut display)
+            .ready()
             .unwrap();
 
         display.assert_pattern(&[
@@ -350,12 +357,14 @@ mod tests {
         Line::new(Point::new(2, 2), Point::new(10, 2))
             .into_styled(PrimitiveStyle::with_stroke(BinaryColor::On, 3))
             .draw(&mut display)
+            .ready()
             .unwrap();
 
         // Vertical line
         Line::new(Point::new(2, 5), Point::new(2, 10))
             .into_styled(PrimitiveStyle::with_stroke(BinaryColor::Off, 3))
             .draw(&mut display)
+            .ready()
             .unwrap();
 
         display.assert_pattern(&[
@@ -380,6 +389,7 @@ mod tests {
         Line::new(Point::new(2, 2), Point::new(2, 2))
             .into_styled(PrimitiveStyle::with_stroke(BinaryColor::On, 3))
             .draw(&mut display)
+            .ready()
             .unwrap();
 
         display.assert_pattern(&[
@@ -398,12 +408,14 @@ mod tests {
         Line::new(Point::new(2, 3), Point::new(10, 3))
             .into_styled(PrimitiveStyle::with_stroke(BinaryColor::On, 4))
             .draw(&mut display)
+            .ready()
             .unwrap();
 
         // Vertical line
         Line::new(Point::new(2, 9), Point::new(10, 8))
             .into_styled(PrimitiveStyle::with_stroke(BinaryColor::On, 4))
             .draw(&mut display)
+            .ready()
             .unwrap();
 
         display.assert_pattern(&[

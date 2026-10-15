@@ -162,6 +162,7 @@
 //! debugging, development or if hardware is not available.
 //!
 //! ```rust,no_run
+//! # let _ = async {
 //! use embedded_graphics::{
 //!     framebuffer::{buffer_size, Framebuffer},
 //!     mono_font::{ascii::FONT_6X10, MonoTextStyle},
@@ -174,7 +175,7 @@
 //!     mock_display::MockDisplay,
 //! };
 //!
-//! fn main() -> Result<(), std::convert::Infallible> {
+//! async fn main() -> Result<(), std::convert::Infallible> {
 //!     // Create a new framebuffer
 //!     let mut display = Framebuffer::<
 //!        BinaryColor,
@@ -202,7 +203,7 @@
 //!     display
 //!         .bounding_box()
 //!         .into_styled(border_stroke)
-//!         .draw(&mut display)?;
+//!         .draw(&mut display).await?;
 //!
 //!     // Draw a triangle.
 //!     Triangle::new(
@@ -211,17 +212,17 @@
 //!         Point::new(16 + 8, yoffset),
 //!     )
 //!     .into_styled(thin_stroke)
-//!     .draw(&mut display)?;
+//!     .draw(&mut display).await?;
 //!
 //!     // Draw a filled square
 //!     Rectangle::new(Point::new(52, yoffset), Size::new(16, 16))
 //!         .into_styled(fill)
-//!         .draw(&mut display)?;
+//!         .draw(&mut display).await?;
 //!
 //!     // Draw a circle with a 3px wide stroke.
 //!     Circle::new(Point::new(88, yoffset), 17)
 //!         .into_styled(thick_stroke)
-//!         .draw(&mut display)?;
+//!         .draw(&mut display).await?;
 //!
 //!     // Draw centered text.
 //!     let text = "embedded-graphics";
@@ -231,10 +232,11 @@
 //!         character_style,
 //!         Alignment::Center,
 //!     )
-//!     .draw(&mut display)?;
+//!     .draw(&mut display).await?;
 //!
 //!     Ok(())
 //! }
+//! # };
 //! ```
 //!
 //! This example is also included in the [examples](https://github.com/embedded-graphics/examples) repository and
@@ -311,9 +313,13 @@ pub mod geometry;
 pub mod image;
 pub mod iterator;
 pub mod mock_display;
+
 pub mod mono_font;
 pub mod prelude;
 pub mod primitives;
+#[cfg(test)]
+#[path = "../tests/support/mod.rs"]
+mod test_support;
 pub mod text;
 pub mod transform;
 

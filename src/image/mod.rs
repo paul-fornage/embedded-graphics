@@ -17,6 +17,7 @@
 //! so it uses the `Rgb565` color type.
 //!
 //! ```rust
+//! # let _ = async {
 //! use embedded_graphics::{
 //!     image::{Image, ImageRaw, ImageRawBE},
 //!     pixelcolor::Rgb565,
@@ -41,9 +42,10 @@
 //! let image = Image::new(&raw, Point::zero());
 //!
 //! // Draw the image to the display.
-//! image.draw(&mut display)?;
+//! image.draw(&mut display).await?;
 //!
 //! # Ok::<(), core::convert::Infallible>(())
+//! # };
 //! ```
 //!
 //! ## Sub images
@@ -54,6 +56,7 @@
 //! in the [`prelude`], which this example takes advantage of.
 //!
 //! ```rust
+//! # let _ = async {
 //! use embedded_graphics::{
 //!     image::{Image, ImageRaw, ImageRawBE},
 //!     pixelcolor::Rgb565,
@@ -76,10 +79,11 @@
 //! let sprite_2 = sprite_atlas.sub_image(&Rectangle::new(Point::new(16, 0), Size::new(16, 16)));
 //!
 //! // Create `Image` objects to draw the sprites at different positions on the display.
-//! Image::new(&sprite_1, Point::new(10, 10)).draw(&mut display)?;
-//! Image::new(&sprite_2, Point::new(40, 30)).draw(&mut display)?;
+//! Image::new(&sprite_1, Point::new(10, 10)).draw(&mut display).await?;
+//! Image::new(&sprite_2, Point::new(40, 30)).draw(&mut display).await?;
 //!
 //! # Ok::<(), core::convert::Infallible>(())
+//! # };
 //! ```
 //!
 //! # Implementing new image formats
@@ -231,12 +235,13 @@ where
     type Color = T::Color;
     type Output = ();
 
-    fn draw<D>(&self, display: &mut D) -> Result<Self::Output, D::Error>
+    async fn draw<D>(&self, display: &mut D) -> Result<Self::Output, D::Error>
     where
         D: DrawTarget<Color = Self::Color>,
     {
         self.image_drawable
             .draw(&mut display.translated(self.offset))
+            .await
     }
 }
 
@@ -252,6 +257,7 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::test_support::FutureExt as _;
     use crate::{geometry::Size, mock_display::MockDisplay, pixelcolor::BinaryColor};
 
     #[test]
@@ -288,6 +294,7 @@ mod tests {
         let mut display = MockDisplay::new();
         Image::new(&image_raw, Point::new(1, 2))
             .draw(&mut display)
+            .ready()
             .unwrap();
 
         display.assert_pattern(&[
@@ -308,6 +315,7 @@ mod tests {
         let mut display = MockDisplay::new();
         Image::with_center(&image_raw, Point::new(1, 2))
             .draw(&mut display)
+            .ready()
             .unwrap();
 
         display.assert_pattern(&[

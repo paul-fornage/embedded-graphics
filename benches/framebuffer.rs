@@ -1,3 +1,7 @@
+#[path = "../tests/support/mod.rs"]
+mod test_support;
+use test_support::FutureExt as _;
+
 use criterion::*;
 use embedded_graphics::{
     framebuffer::{buffer_size, Framebuffer},
@@ -60,7 +64,7 @@ fn framebuffer_1bpp_draw_iter(c: &mut Criterion) {
                 .into_styled(PrimitiveStyle::with_fill(BinaryColor::On))
                 .pixels();
 
-            fb.draw_iter(rect).unwrap();
+            fb.draw_iter(rect).ready().unwrap();
         })
     });
 }

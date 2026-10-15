@@ -43,24 +43,24 @@ impl StyledScanline {
     }
 
     /// Draws the stroke regions.
-    pub fn draw_stroke<T: DrawTarget>(
+    pub async fn draw_stroke<T: DrawTarget>(
         &self,
         target: &mut T,
         stroke_color: T::Color,
     ) -> Result<(), T::Error> {
-        self.stroke_left().draw(target, stroke_color)?;
-        self.stroke_right().draw(target, stroke_color)
+        self.stroke_left().draw(target, stroke_color).await?;
+        self.stroke_right().draw(target, stroke_color).await
     }
 
     /// Draws the stroke and fill regions.
-    pub fn draw_stroke_and_fill<T: DrawTarget>(
+    pub async fn draw_stroke_and_fill<T: DrawTarget>(
         &self,
         target: &mut T,
         stroke_color: T::Color,
         fill_color: T::Color,
     ) -> Result<(), T::Error> {
-        self.stroke_left().draw(target, stroke_color)?;
-        self.fill().draw(target, fill_color)?;
-        self.stroke_right().draw(target, stroke_color)
+        self.stroke_left().draw(target, stroke_color).await?;
+        self.fill().draw(target, fill_color).await?;
+        self.stroke_right().draw(target, stroke_color).await
     }
 }

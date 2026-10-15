@@ -21,6 +21,7 @@ use crate::{
 /// # Examples
 ///
 /// ```
+/// # let _ = async {
 /// use embedded_graphics::{
 ///     image::{Image, ImageRaw, ImageTransparent},
 ///     pixelcolor::Gray8,
@@ -44,9 +45,10 @@ use crate::{
 ///
 /// // Draw the transparent image at `(0, 0)`.
 /// let image = Image::new(&transparent, Point::zero());
-/// image.draw(&mut display)?;
+/// image.draw(&mut display).await?;
 ///
 /// # Ok::<(), core::convert::Infallible>(())
+/// # };
 /// ```
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[cfg_attr(feature = "defmt", derive(::defmt::Format))]
@@ -76,7 +78,7 @@ impl<T: ImageDrawable> OriginDimensions for ImageTransparent<T> {
 impl<T: ImageDrawable> ImageDrawable for ImageTransparent<T> {
     type Color = T::Color;
 
-    fn draw<D>(&self, target: &mut D) -> Result<(), D::Error>
+    async fn draw<D>(&self, target: &mut D) -> Result<(), D::Error>
     where
         D: DrawTarget<Color = Self::Color>,
     {
@@ -84,10 +86,10 @@ impl<T: ImageDrawable> ImageDrawable for ImageTransparent<T> {
             target,
             transparent_color: self.transparent_color,
         };
-        self.source.draw(&mut draw_target)
+        self.source.draw(&mut draw_target).await
     }
 
-    fn draw_sub_image<D>(&self, target: &mut D, area: &Rectangle) -> Result<(), D::Error>
+    async fn draw_sub_image<D>(&self, target: &mut D, area: &Rectangle) -> Result<(), D::Error>
     where
         D: DrawTarget<Color = Self::Color>,
     {
@@ -95,7 +97,7 @@ impl<T: ImageDrawable> ImageDrawable for ImageTransparent<T> {
             target,
             transparent_color: self.transparent_color,
         };
-        self.source.draw_sub_image(&mut draw_target, area)
+        self.source.draw_sub_image(&mut draw_target, area).await
     }
 }
 
@@ -114,14 +116,16 @@ impl<'a, T: DrawTarget> DrawTarget for TransparentDrawTarget<'a, T> {
     type Color = T::Color;
     type Error = T::Error;
 
-    fn draw_iter<I>(&mut self, pixels: I) -> Result<(), Self::Error>
+    async fn draw_iter<I>(&mut self, pixels: I) -> Result<(), Self::Error>
     where
         I: IntoIterator<Item = Pixel<Self::Color>>,
     {
-        self.target.draw_iter(
-            pixels
-                .into_iter()
-                .filter(|pixel| pixel.1 != self.transparent_color),
-        )
+        self.target
+            .draw_iter(
+                pixels
+                    .into_iter()
+                    .filter(|pixel| pixel.1 != self.transparent_color),
+            )
+            .await
     }
 }

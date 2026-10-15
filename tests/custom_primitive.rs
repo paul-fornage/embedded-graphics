@@ -1,3 +1,7 @@
+#[path = "support/mod.rs"]
+mod test_support;
+use test_support::FutureExt as _;
+
 use embedded_graphics::{
     mock_display::MockDisplay,
     pixelcolor::Rgb888,
@@ -32,7 +36,7 @@ impl<C: PixelColor> StyledDrawable<PrimitiveStyle<C>> for Square {
     type Color = C;
     type Output = ();
 
-    fn draw_styled<D>(
+    async fn draw_styled<D>(
         &self,
         style: &PrimitiveStyle<C>,
         target: &mut D,
@@ -40,7 +44,7 @@ impl<C: PixelColor> StyledDrawable<PrimitiveStyle<C>> for Square {
     where
         D: DrawTarget<Color = Self::Color>,
     {
-        self.to_rectangle().draw_styled(style, target)
+        self.to_rectangle().draw_styled(style, target).await
     }
 }
 
@@ -56,6 +60,7 @@ fn draw_custom_primitive() {
     Square::new(Point::new(1, 0), 2)
         .into_styled(PrimitiveStyle::with_fill(Rgb888::RED))
         .draw(&mut display)
+        .ready()
         .unwrap();
     display.assert_pattern(&[
         " RR", //

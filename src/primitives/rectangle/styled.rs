@@ -127,7 +127,7 @@ fn unit_positions_in_clockwise_order(length: u32, dot_size: u32) -> impl Iterato
 /// The gaps between dots ideally have the same size as the dots.
 /// The gaps can be smaller or larger than ideal.
 /// Opposite borders are identical (horizontal and vertical sides are independent).
-fn draw_dotted_rectangle_border_with_dotted_corners<D>(
+async fn draw_dotted_rectangle_border_with_dotted_corners<D>(
     top_left: &Point,
     border_size: &Size,
     dot_size: u32,
@@ -144,11 +144,13 @@ where
         // top size (from left to right)
         top_left_dot
             .translate(Point::new(x, 0))
-            .draw_styled(style, target)?;
+            .draw_styled(style, target)
+            .await?;
         // bottom side (from right to left)
         top_left_dot
             .translate(-Point::new(x, 0) + *border_size)
-            .draw_styled(style, target)?;
+            .draw_styled(style, target)
+            .await?;
     }
 
     // Draw vertical sides (without corner dots)
@@ -156,11 +158,13 @@ where
         // right side (from top to bottom)
         top_left_dot
             .translate(Point::new(0, y) + border_size.x_axis())
-            .draw_styled(style, target)?;
+            .draw_styled(style, target)
+            .await?;
         // left side (from bottom to top)
         top_left_dot
             .translate(-Point::new(0, y) + border_size.y_axis())
-            .draw_styled(style, target)?;
+            .draw_styled(style, target)
+            .await?;
     }
 
     Ok(())
@@ -172,11 +176,11 @@ where
 /// The gaps between dots ideally have the same size as the dots.
 /// The gaps can be larger than ideal, but not smaller.
 /// A corner can be filled either by a dot or a gap (sides are drawn in clockwise order).
-fn draw_dotted_rectangle_border_in_clockwise_order<D>(
+async fn draw_dotted_rectangle_border_in_clockwise_order<D>(
     top_left: &Point,
     border_sides: &[Point],
     dot_size: u32,
-    style: &PrimitiveStyle<D::Color>,
+    color: D::Color,
     target: &mut D,
 ) -> Result<(), D::Error>
 where
@@ -202,9 +206,9 @@ where
         for offset in unit_positions_in_clockwise_order(length, dot_size) {
             if unit_is_dot {
                 let translation = Point::new(side.x.signum(), side.y.signum()) * offset;
-                corner_dot
-                    .translate(translation)
-                    .draw_styled(style, target)?;
+                target
+                    .fill_solid(&corner_dot.translate(translation), color)
+                    .await?;
             }
             unit_is_dot = !unit_is_dot; // alternating dots and gaps
         }
@@ -212,7 +216,7 @@ where
     }
 
     if nb_sides_to_draw < 4 && unit_is_dot {
-        corner_dot.draw_styled(style, target)
+        target.fill_solid(&corner_dot, color).await
     } else {
         Ok(())
     }
@@ -222,7 +226,7 @@ impl<C: PixelColor> StyledDrawable<PrimitiveStyle<C>> for Rectangle {
     type Color = C;
     type Output = ();
 
-    fn draw_styled<D>(
+    async fn draw_styled<D>(
         &self,
         style: &PrimitiveStyle<C>,
         target: &mut D,
@@ -234,7 +238,7 @@ impl<C: PixelColor> StyledDrawable<PrimitiveStyle<C>> for Rectangle {
 
         // Fill rectangle
         if let Some(fill_color) = style.fill_color {
-            target.fill_solid(&fill_area, fill_color)?;
+            target.fill_solid(&fill_area, fill_color).await?;
         }
 
         // Draw stroke
@@ -269,9 +273,10 @@ impl<C: PixelColor> StyledDrawable<PrimitiveStyle<C>> for Rectangle {
                     &stroke_area.top_left,
                     &border_sides,
                     dot_size,
-                    &dot_style,
+                    stroke_color,
                     target,
-                )?
+                )
+                .await?
             } else {
                 draw_dotted_rectangle_border_with_dotted_corners(
                     &stroke_area.top_left,
@@ -279,7 +284,8 @@ impl<C: PixelColor> StyledDrawable<PrimitiveStyle<C>> for Rectangle {
                     dot_size,
                     &dot_style,
                     target,
-                )?
+                )
+                .await?
             }
         } else {
             let top_border = Rectangle::new(
@@ -302,8 +308,8 @@ impl<C: PixelColor> StyledDrawable<PrimitiveStyle<C>> for Rectangle {
                 Size::new(stroke_area.size.width, bottom_stroke_width),
             );
 
-            target.fill_solid(&top_border, stroke_color)?;
-            target.fill_solid(&bottom_border, stroke_color)?;
+            target.fill_solid(&top_border, stroke_color).await?;
+            target.fill_solid(&bottom_border, stroke_color).await?;
 
             if fill_area.size.height > 0 {
                 let left_border = Rectangle::new(
@@ -322,8 +328,8 @@ impl<C: PixelColor> StyledDrawable<PrimitiveStyle<C>> for Rectangle {
                     0,
                 ));
 
-                target.fill_solid(&left_border, stroke_color)?;
-                target.fill_solid(&right_border, stroke_color)?;
+                target.fill_solid(&left_border, stroke_color).await?;
+                target.fill_solid(&right_border, stroke_color).await?;
             }
         }
 
@@ -342,6 +348,7 @@ impl<C: PixelColor> StyledDimensions<PrimitiveStyle<C>> for Rectangle {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::test_support::FutureExt as _;
     use crate::{
         geometry::{OriginDimensions, Point, Size},
         iterator::PixelIteratorExt,
@@ -392,6 +399,7 @@ mod tests {
         Rectangle::new(TOP_LEFT, SIZE)
             .into_styled(style)
             .draw(&mut display_center)
+            .ready()
             .unwrap();
 
         let mut display_inside = MockDisplay::new();
@@ -402,6 +410,7 @@ mod tests {
                     .build(),
             )
             .draw(&mut display_inside)
+            .ready()
             .unwrap();
 
         let mut display_outside = MockDisplay::new();
@@ -412,6 +421,7 @@ mod tests {
                     .build(),
             )
             .draw(&mut display_outside)
+            .ready()
             .unwrap();
 
         display_inside.assert_eq(&display_center);
@@ -429,8 +439,12 @@ mod tests {
 
         let mut drawn_center = MockDisplay::new();
         let mut iter_center = MockDisplay::new();
-        rectangle_center.draw(&mut drawn_center).unwrap();
-        rectangle_center.pixels().draw(&mut iter_center).unwrap();
+        rectangle_center.draw(&mut drawn_center).ready().unwrap();
+        rectangle_center
+            .pixels()
+            .draw(&mut iter_center)
+            .ready()
+            .unwrap();
         drawn_center.assert_eq(&iter_center);
 
         let rectangle_inside = Rectangle::new(TOP_LEFT - Point::new(1, 1), SIZE + Size::new(2, 2))
@@ -442,8 +456,12 @@ mod tests {
 
         let mut drawn_inside = MockDisplay::new();
         let mut iter_inside = MockDisplay::new();
-        rectangle_inside.draw(&mut drawn_inside).unwrap();
-        rectangle_inside.pixels().draw(&mut iter_inside).unwrap();
+        rectangle_inside.draw(&mut drawn_inside).ready().unwrap();
+        rectangle_inside
+            .pixels()
+            .draw(&mut iter_inside)
+            .ready()
+            .unwrap();
         drawn_inside.assert_eq(&iter_inside);
 
         let rectangle_outside = Rectangle::new(TOP_LEFT + Point::new(2, 2), SIZE - Size::new(4, 4))
@@ -455,8 +473,12 @@ mod tests {
 
         let mut drawn_outside = MockDisplay::new();
         let mut iter_outside = MockDisplay::new();
-        rectangle_outside.draw(&mut drawn_outside).unwrap();
-        rectangle_outside.pixels().draw(&mut iter_outside).unwrap();
+        rectangle_outside.draw(&mut drawn_outside).ready().unwrap();
+        rectangle_outside
+            .pixels()
+            .draw(&mut iter_outside)
+            .ready()
+            .unwrap();
         drawn_outside.assert_eq(&iter_outside);
     }
 
@@ -471,8 +493,8 @@ mod tests {
 
         let mut drawn = MockDisplay::new();
         let mut iter = MockDisplay::new();
-        rectangle.draw(&mut drawn).unwrap();
-        rectangle.pixels().draw(&mut iter).unwrap();
+        rectangle.draw(&mut drawn).ready().unwrap();
+        rectangle.pixels().draw(&mut iter).ready().unwrap();
         drawn.assert_eq(&iter);
     }
 
@@ -511,12 +533,16 @@ mod tests {
                 let mut display_iter = MockDisplay::new();
 
                 // Calls draw() impl above using fill_solid()
-                rect.into_styled(style).draw(&mut display_drawable).unwrap();
+                rect.into_styled(style)
+                    .draw(&mut display_drawable)
+                    .ready()
+                    .unwrap();
 
                 // Calls draw_iter()
                 rect.into_styled(style)
                     .pixels()
                     .draw(&mut display_iter)
+                    .ready()
                     .unwrap();
 
                 display_drawable.assert_eq_with_message(
@@ -569,13 +595,13 @@ mod tests {
             rectangle.into_styled(base.stroke_alignment(StrokeAlignment::Outside).build());
 
         let mut display = MockDisplay::new();
-        center.draw(&mut display).unwrap();
+        center.draw(&mut display).ready().unwrap();
         assert_eq!(display.affected_area(), center.bounding_box());
         let mut display = MockDisplay::new();
-        inside.draw(&mut display).unwrap();
+        inside.draw(&mut display).ready().unwrap();
         assert_eq!(display.affected_area(), inside.bounding_box());
         let mut display = MockDisplay::new();
-        outside.draw(&mut display).unwrap();
+        outside.draw(&mut display).ready().unwrap();
         assert_eq!(display.affected_area(), outside.bounding_box());
     }
 
@@ -602,9 +628,13 @@ mod tests {
             let mut regular = MockDisplay::new();
             let mut dotted = MockDisplay::new();
 
-            rect.into_styled(base.build()).draw(&mut regular).unwrap();
+            rect.into_styled(base.build())
+                .draw(&mut regular)
+                .ready()
+                .unwrap();
             rect.into_styled(base.stroke_style(StrokeStyle::Dotted).build())
                 .draw(&mut dotted)
+                .ready()
                 .unwrap();
 
             for p in regular.bounding_box().points() {
@@ -637,10 +667,12 @@ mod tests {
         top_left_dot1
             .into_styled(PrimitiveStyle::with_fill(BinaryColor::On))
             .draw(&mut dot)
+            .ready()
             .unwrap();
         rectangle1
             .into_styled(base.stroke_style(StrokeStyle::Dotted).build())
             .draw(&mut dotted_border)
+            .ready()
             .unwrap();
 
         for p in top_left_dot1.bounding_box().points() {
@@ -653,10 +685,12 @@ mod tests {
         top_left_dot2
             .into_styled(PrimitiveStyle::with_fill(BinaryColor::On))
             .draw(&mut dot)
+            .ready()
             .unwrap();
         rectangle2
             .into_styled(base.stroke_style(StrokeStyle::Dotted).build())
             .draw(&mut dotted_border)
+            .ready()
             .unwrap();
 
         for p in top_left_dot2.bounding_box().points() {
@@ -677,9 +711,11 @@ mod tests {
 
         rect.into_styled(base.stroke_alignment(StrokeAlignment::Inside).build())
             .draw(&mut inside)
+            .ready()
             .unwrap();
         rect.into_styled(base.stroke_alignment(StrokeAlignment::Outside).build())
             .draw(&mut outside)
+            .ready()
             .unwrap();
 
         for p in rect.bounding_box().points() {
@@ -698,6 +734,7 @@ mod tests {
                     .build(),
             )
             .draw(&mut display)
+            .ready()
             .unwrap();
 
         display.assert_pattern(&[
@@ -720,6 +757,7 @@ mod tests {
                     .build(),
             )
             .draw(&mut display)
+            .ready()
             .unwrap();
 
         display.assert_pattern(&[
@@ -743,6 +781,7 @@ mod tests {
                     .build(),
             )
             .draw(&mut display)
+            .ready()
             .unwrap();
 
         display.assert_pattern(&[
@@ -771,6 +810,7 @@ mod tests {
                     .build(),
             )
             .draw(&mut display)
+            .ready()
             .unwrap();
 
         display.assert_pattern(&[
@@ -792,6 +832,7 @@ mod tests {
                     .build(),
             )
             .draw(&mut display)
+            .ready()
             .unwrap();
 
         display.assert_pattern(&[
@@ -814,6 +855,7 @@ mod tests {
                     .build(),
             )
             .draw(&mut display)
+            .ready()
             .unwrap();
 
         display.assert_pattern(&[
@@ -845,10 +887,14 @@ mod tests {
 
             let rect = Rectangle::with_corners(top_left, opposite_zero - top_left);
 
-            rect.into_styled(dotted_style).draw(&mut dotted).unwrap();
+            rect.into_styled(dotted_style)
+                .draw(&mut dotted)
+                .ready()
+                .unwrap();
 
             rect.into_styled(dotted_style)
                 .draw(&mut dotted_copy)
+                .ready()
                 .unwrap();
 
             for p in rect.bounding_box().points() {

@@ -19,6 +19,7 @@ pub use styled::StyledPixelsIterator;
 /// ## Create some arcs with different styles
 ///
 /// ```rust
+/// # let _ = async {
 /// use embedded_graphics::{
 ///     pixelcolor::Rgb565,
 ///     prelude::*,
@@ -30,7 +31,7 @@ pub use styled::StyledPixelsIterator;
 /// // Arc with 1 pixel wide white stroke with top-left point at (10, 20) with a diameter of 30
 /// Arc::new(Point::new(10, 20), 30, 0.0.deg(), 90.0.deg())
 ///     .into_styled(PrimitiveStyle::with_stroke(Rgb565::WHITE, 1))
-///     .draw(&mut display)?;
+///     .draw(&mut display).await?;
 ///
 /// // Arc with styled stroke with top-left point at (15, 25) with a diameter of 20
 /// let style = PrimitiveStyleBuilder::new()
@@ -40,8 +41,9 @@ pub use styled::StyledPixelsIterator;
 ///
 /// Arc::new(Point::new(15, 25), 20, 180.0.deg(), -90.0.deg())
 ///     .into_styled(style)
-///     .draw(&mut display)?;
+///     .draw(&mut display).await?;
 /// # Ok::<(), core::convert::Infallible>(())
+/// # };
 /// ```
 #[derive(Copy, Clone, PartialEq, PartialOrd, Debug)]
 #[cfg_attr(feature = "defmt", derive(::defmt::Format))]

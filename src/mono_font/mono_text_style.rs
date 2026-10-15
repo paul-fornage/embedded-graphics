@@ -106,7 +106,7 @@ where
         })
     }
 
-    fn draw_decorations<D>(
+    async fn draw_decorations<D>(
         &self,
         width: u32,
         position: Point,
@@ -117,18 +117,18 @@ where
     {
         if let Some(color) = self.strikethrough_color.effective_color(self.text_color) {
             let rect = self.font.strikethrough.get_bounding_box(position, width);
-            target.fill_solid(&rect, color)?;
+            target.fill_solid(&rect, color).await?;
         }
 
         if let Some(color) = self.underline_color.effective_color(self.text_color) {
             let rect = self.font.underline.get_bounding_box(position, width);
-            target.fill_solid(&rect, color)?;
+            target.fill_solid(&rect, color).await?;
         }
 
         Ok(())
     }
 
-    fn draw_string_binary<D>(
+    async fn draw_string_binary<D>(
         &self,
         text: &str,
         position: Point,
@@ -141,21 +141,23 @@ where
             match element {
                 LineElement::Char(c) => {
                     let glyph = self.font.glyph(c);
-                    Image::new(&glyph, p).draw(&mut target)?;
+                    Image::new(&glyph, p).draw(&mut target).await?;
                 }
                 // Fill space between characters if background color is set.
                 LineElement::Spacing if self.font.character_spacing > 0 => {
                     if self.background_color.is_some() {
-                        target.fill_solid(
-                            &Rectangle::new(
-                                p,
-                                Size::new(
-                                    self.font.character_spacing,
-                                    self.font.character_size.height,
+                        target
+                            .fill_solid(
+                                &Rectangle::new(
+                                    p,
+                                    Size::new(
+                                        self.font.character_spacing,
+                                        self.font.character_size.height,
+                                    ),
                                 ),
-                            ),
-                            BinaryColor::Off,
-                        )?;
+                                BinaryColor::Off,
+                            )
+                            .await?;
                     }
                 }
                 LineElement::Spacing => {}
@@ -190,7 +192,7 @@ where
 {
     type Color = C;
 
-    fn draw_string<D>(
+    async fn draw_string<D>(
         &self,
         text: &str,
         position: Point,
@@ -203,21 +205,30 @@ where
         let position = position - Point::new(0, self.baseline_offset(baseline));
 
         let next = match (self.text_color, self.background_color) {
-            (Some(text_color), Some(background_color)) => self.draw_string_binary(
-                text,
-                position,
-                MonoFontDrawTarget::new(target, Both(text_color, background_color)),
-            )?,
-            (Some(text_color), None) => self.draw_string_binary(
-                text,
-                position,
-                MonoFontDrawTarget::new(target, Foreground(text_color)),
-            )?,
-            (None, Some(background_color)) => self.draw_string_binary(
-                text,
-                position,
-                MonoFontDrawTarget::new(target, Background(background_color)),
-            )?,
+            (Some(text_color), Some(background_color)) => {
+                self.draw_string_binary(
+                    text,
+                    position,
+                    MonoFontDrawTarget::new(target, Both(text_color, background_color)),
+                )
+                .await?
+            }
+            (Some(text_color), None) => {
+                self.draw_string_binary(
+                    text,
+                    position,
+                    MonoFontDrawTarget::new(target, Foreground(text_color)),
+                )
+                .await?
+            }
+            (None, Some(background_color)) => {
+                self.draw_string_binary(
+                    text,
+                    position,
+                    MonoFontDrawTarget::new(target, Background(background_color)),
+                )
+                .await?
+            }
             (None, None) => {
                 let dx = (self.font.character_size.width + self.font.character_spacing)
                     * text.chars().count() as u32;
@@ -228,13 +239,13 @@ where
 
         if next.x > position.x {
             let width = (next.x - position.x) as u32;
-            self.draw_decorations(width, position, target)?;
+            self.draw_decorations(width, position, target).await?;
         }
 
         Ok(next + Point::new(0, self.baseline_offset(baseline)))
     }
 
-    fn draw_whitespace<D>(
+    async fn draw_whitespace<D>(
         &self,
         width: u32,
         position: Point,
@@ -248,13 +259,18 @@ where
 
         if width != 0 {
             if let Some(background_color) = self.background_color {
-                target.fill_solid(
-                    &Rectangle::new(position, Size::new(width, self.font.character_size.height)),
-                    background_color,
-                )?;
+                target
+                    .fill_solid(
+                        &Rectangle::new(
+                            position,
+                            Size::new(width, self.font.character_size.height),
+                        ),
+                        background_color,
+                    )
+                    .await?;
             }
 
-            self.draw_decorations(width, position, target)?;
+            self.draw_decorations(width, position, target).await?;
         }
 
         Ok(position + Point::new(width.saturating_as(), self.baseline_offset(baseline)))
@@ -526,6 +542,7 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::test_support::FutureExt as _;
     use crate::{
         geometry::Dimensions,
         image::ImageRaw,
@@ -654,6 +671,7 @@ mod tests {
         let mut display = MockDisplay::new();
         Text::new("ABC", Point::new(0, 6), UNDERLINED_WHITE_STYLE)
             .draw(&mut display)
+            .ready()
             .unwrap();
 
         display.assert_pattern(&[
@@ -679,6 +697,7 @@ mod tests {
             Baseline::Middle,
         )
         .draw(&mut display)
+        .ready()
         .unwrap();
 
         display.assert_pattern(&[
@@ -707,6 +726,7 @@ mod tests {
         let mut display = MockDisplay::new();
         Text::new("ABC", Point::new(0, 6), style)
             .draw(&mut display)
+            .ready()
             .unwrap();
 
         display.assert_pattern(&[
@@ -735,6 +755,7 @@ mod tests {
 
         Text::new("ABC", Point::new(0, 6), style)
             .draw(&mut display)
+            .ready()
             .unwrap();
 
         display.assert_pattern(&[
@@ -761,6 +782,7 @@ mod tests {
 
         Text::new("ABC", Point::new(0, 6), style)
             .draw(&mut display)
+            .ready()
             .unwrap();
 
         display.assert_pattern(&[
@@ -785,6 +807,7 @@ mod tests {
         let mut display = MockDisplay::new();
         style
             .draw_whitespace(4, Point::zero(), Baseline::Top, &mut display)
+            .ready()
             .unwrap();
 
         display.assert_pattern(&[
@@ -812,6 +835,7 @@ mod tests {
         let mut display = MockDisplay::new();
         style
             .draw_whitespace(3, Point::zero(), Baseline::Top, &mut display)
+            .ready()
             .unwrap();
 
         display.assert_pattern(&[
@@ -842,6 +866,7 @@ mod tests {
 
         style
             .draw_whitespace(8, Point::zero(), Baseline::Top, &mut display)
+            .ready()
             .unwrap();
 
         display.assert_pattern(&[
@@ -886,6 +911,7 @@ mod tests {
         let mut display = MockDisplay::new();
         Text::with_baseline("##", Point::zero(), character_style, Baseline::Top)
             .draw(&mut display)
+            .ready()
             .unwrap();
 
         display.assert_pattern(&[
@@ -915,6 +941,7 @@ mod tests {
 
         Text::with_baseline("##", Point::zero(), character_style, Baseline::Top)
             .draw(&mut display)
+            .ready()
             .unwrap();
 
         display.assert_pattern(&[
@@ -974,11 +1001,13 @@ mod tests {
         let mut display = MockDisplay::new();
         style
             .draw_string("A\t\n\rB", Point::zero(), Baseline::Top, &mut display)
+            .ready()
             .unwrap();
 
         let mut expected = MockDisplay::new();
         style
             .draw_string("A???B", Point::zero(), Baseline::Top, &mut expected)
+            .ready()
             .unwrap();
 
         display.assert_eq(&expected);
@@ -1024,6 +1053,7 @@ mod tests {
             let mut display = MockDisplay::new();
             let next = style
                 .draw_string("AB", start, *baseline, &mut display)
+                .ready()
                 .unwrap();
 
             assert_eq!(
@@ -1050,6 +1080,7 @@ mod tests {
             let mut display = MockDisplay::new();
             let next = style
                 .draw_whitespace(15, start, *baseline, &mut display)
+                .ready()
                 .unwrap();
 
             assert_eq!(
@@ -1079,7 +1110,7 @@ mod tests {
         );
 
         let mut display = MockDisplay::new();
-        let next = text.draw(&mut display).unwrap();
+        let next = text.draw(&mut display).ready().unwrap();
 
         assert_eq!(next, position + FONT_6X9_LATIN1.character_size.x_axis() * 6);
     }
@@ -1102,7 +1133,7 @@ mod tests {
         );
 
         let mut display = MockDisplay::new();
-        let next = text.draw(&mut display).unwrap();
+        let next = text.draw(&mut display).ready().unwrap();
 
         assert_eq!(next, position + FONT_6X9.character_size.x_axis() * 3);
     }
@@ -1126,7 +1157,7 @@ mod tests {
         );
 
         let mut display = MockDisplay::new();
-        let next = text.draw(&mut display).unwrap();
+        let next = text.draw(&mut display).ready().unwrap();
 
         assert_eq!(
             next,
@@ -1155,7 +1186,7 @@ mod tests {
         );
 
         let mut display = MockDisplay::new();
-        let next = text.draw(&mut display).unwrap();
+        let next = text.draw(&mut display).ready().unwrap();
 
         assert_eq!(next, position + FONT_6X9.character_size);
     }

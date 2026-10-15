@@ -23,6 +23,7 @@ pub use character_style::CharacterStyle;
 ///
 /// The `TextRenderer` trait is used to integrate text renderers into embedded-graphics. Users should
 /// not call it directly and instead use the functions provided by the `Text` type.
+#[allow(async_fn_in_trait)] // Futures may stay on the local embedded executor.
 pub trait TextRenderer {
     /// Color type.
     type Color: PixelColor;
@@ -37,7 +38,7 @@ pub trait TextRenderer {
     /// This method must not interpret any control characters and only render a single line of text.
     /// Any control character in the `text` should be handled the same way as any other character
     /// that isn't included in the font.
-    fn draw_string<D>(
+    async fn draw_string<D>(
         &self,
         text: &str,
         position: Point,
@@ -51,7 +52,7 @@ pub trait TextRenderer {
     ///
     /// The method returns the start position of the next character to allow chaining of multiple
     /// draw calls.
-    fn draw_whitespace<D>(
+    async fn draw_whitespace<D>(
         &self,
         width: u32,
         position: Point,

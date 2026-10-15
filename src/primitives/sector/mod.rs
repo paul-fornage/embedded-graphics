@@ -21,6 +21,7 @@ pub use styled::StyledPixelsIterator;
 /// ## Create some sectors with different styles
 ///
 /// ```rust
+/// # let _ = async {
 /// use embedded_graphics::{
 ///     pixelcolor::Rgb565,
 ///     prelude::*,
@@ -33,7 +34,7 @@ pub use styled::StyledPixelsIterator;
 /// // Sector with 1 pixel wide white stroke with top-left point at (10, 20) with a diameter of 30
 /// Sector::new(Point::new(10, 20), 30, 0.0.deg(), 90.0.deg())
 ///     .into_styled(PrimitiveStyle::with_stroke(Rgb565::WHITE, 1))
-///     .draw(&mut display)?;
+///     .draw(&mut display).await?;
 ///
 /// // Sector with styled stroke and fill with top-left point at (10, 20) with a diameter of 30
 /// let style = PrimitiveStyleBuilder::new()
@@ -44,14 +45,15 @@ pub use styled::StyledPixelsIterator;
 ///
 /// Sector::new(Point::new(10, 20), 30, 180.0.deg(), -90.0.deg())
 ///     .into_styled(style)
-///     .draw(&mut display)?;
+///     .draw(&mut display).await?;
 ///
 /// // Sector with blue fill and no stroke with a translation applied
 /// Sector::new(Point::new(10, 20), 30, 0.0.deg(), 90.0.deg())
 ///     .translate(Point::new(15, 5))
 ///     .into_styled(PrimitiveStyle::with_fill(Rgb565::BLUE))
-///     .draw(&mut display)?;
+///     .draw(&mut display).await?;
 /// # Ok::<(), core::convert::Infallible>(())
+/// # };
 /// ```
 #[derive(Copy, Clone, PartialEq, PartialOrd, Debug)]
 #[cfg_attr(feature = "defmt", derive(::defmt::Format))]

@@ -36,7 +36,7 @@ where
     type Color = T::Color;
     type Error = T::Error;
 
-    fn draw_iter<I>(&mut self, pixels: I) -> Result<(), Self::Error>
+    async fn draw_iter<I>(&mut self, pixels: I) -> Result<(), Self::Error>
     where
         I: IntoIterator<Item = Pixel<Self::Color>>,
     {
@@ -44,28 +44,32 @@ where
             .into_iter()
             .filter(|Pixel(p, _)| self.clip_area.contains(*p));
 
-        self.parent.draw_iter(pixels)
+        self.parent.draw_iter(pixels).await
     }
 
-    fn fill_contiguous<I>(&mut self, area: &Rectangle, colors: I) -> Result<(), Self::Error>
+    async fn fill_contiguous<I>(&mut self, area: &Rectangle, colors: I) -> Result<(), Self::Error>
     where
         I: IntoIterator<Item = Self::Color>,
     {
         let intersection = self.bounding_box().intersection(area);
 
         if &intersection == area {
-            self.parent.fill_contiguous(area, colors)
+            self.parent.fill_contiguous(area, colors).await
         } else {
             let crop_area = intersection.translate(-area.top_left);
             let cropped = Cropped::new(colors.into_iter(), area.size, &crop_area);
-            self.parent.fill_contiguous(&intersection, cropped)
+            self.parent.fill_contiguous(&intersection, cropped).await
         }
     }
 
-    fn fill_solid(&mut self, area: &Rectangle, color: Self::Color) -> Result<(), Self::Error> {
+    async fn fill_solid(
+        &mut self,
+        area: &Rectangle,
+        color: Self::Color,
+    ) -> Result<(), Self::Error> {
         let area = area.intersection(&self.clip_area);
 
-        self.parent.fill_solid(&area, color)
+        self.parent.fill_solid(&area, color).await
     }
 }
 
@@ -80,6 +84,7 @@ where
 
 #[cfg(test)]
 mod tests {
+    use crate::test_support::FutureExt as _;
     use crate::{
         draw_target::{DrawTarget, DrawTargetExt},
         geometry::Dimensions,
@@ -109,7 +114,7 @@ mod tests {
             Pixel(Point::new(2, 4), BinaryColor::Off),
             Pixel(Point::new(2, 5), BinaryColor::Off),
         ];
-        clipped.draw_iter(pixels.iter().copied()).unwrap();
+        clipped.draw_iter(pixels.iter().copied()).ready().unwrap();
 
         display.assert_pattern(&[
             "    ", //
@@ -136,6 +141,7 @@ mod tests {
         let area = Rectangle::new(Point::new(1, 2), Size::new(5, 4));
         clipped
             .fill_contiguous(&area, colors.iter().map(|c| BinaryColor::from(*c != 0)))
+            .ready()
             .unwrap();
 
         display.assert_pattern(&[
@@ -155,7 +161,7 @@ mod tests {
         let mut clipped = display.clipped(&area);
 
         let area = Rectangle::new(Point::new(2, 1), Size::new(6, 4));
-        clipped.fill_solid(&area, BinaryColor::On).unwrap();
+        clipped.fill_solid(&area, BinaryColor::On).ready().unwrap();
 
         display.assert_pattern(&[
             "       ", //
@@ -171,11 +177,12 @@ mod tests {
 
         let area = Rectangle::new(Point::new(1, 3), Size::new(3, 4));
         let mut clipped = display.clipped(&area);
-        clipped.clear(BinaryColor::On).unwrap();
+        clipped.clear(BinaryColor::On).ready().unwrap();
 
         let mut expected = MockDisplay::new();
         area.into_styled(PrimitiveStyle::with_fill(BinaryColor::On))
             .draw(&mut expected)
+            .ready()
             .unwrap();
 
         display.assert_eq(&expected);

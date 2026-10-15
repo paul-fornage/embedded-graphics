@@ -221,6 +221,7 @@ pub fn major_length(line: &Line) -> u32 {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::test_support::FutureExt as _;
     use crate::{mock_display::MockDisplay, pixelcolor::BinaryColor, Drawable, Pixel};
 
     #[test]
@@ -254,6 +255,7 @@ mod tests {
                     BresenhamPoint::Extra(point) => Pixel(point, BinaryColor::Off),
                 }
                 .draw(&mut display_next)
+                .ready()
                 .unwrap();
             }
 
@@ -264,6 +266,7 @@ mod tests {
                     BresenhamPoint::Extra(point) => Pixel(point, BinaryColor::Off),
                 }
                 .draw(&mut display_previous)
+                .ready()
                 .unwrap();
             }
         }

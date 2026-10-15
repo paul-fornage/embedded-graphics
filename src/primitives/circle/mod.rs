@@ -21,6 +21,7 @@ pub use styled::StyledPixelsIterator;
 /// ## Create some circles with different styles
 ///
 /// ```rust
+/// # let _ = async {
 /// use embedded_graphics::{
 ///     pixelcolor::Rgb565,
 ///     prelude::*,
@@ -32,7 +33,7 @@ pub use styled::StyledPixelsIterator;
 /// # let mut display = MockDisplay::default();
 /// Circle::new(Point::new(10, 20), 30)
 ///     .into_styled(PrimitiveStyle::with_stroke(Rgb565::WHITE, 1))
-///     .draw(&mut display)?;
+///     .draw(&mut display).await?;
 ///
 /// // Circle with styled stroke and fill with top-left point at (50, 20) with a diameter of 30
 /// let style = PrimitiveStyleBuilder::new()
@@ -44,15 +45,16 @@ pub use styled::StyledPixelsIterator;
 /// # let mut display = MockDisplay::default();
 /// Circle::new(Point::new(50, 20), 10)
 ///     .into_styled(style)
-///     .draw(&mut display)?;
+///     .draw(&mut display).await?;
 ///
 /// // Circle with blue fill and no stroke with a translation applied
 /// # let mut display = MockDisplay::default();
 /// Circle::new(Point::new(10, 20), 30)
 ///     .translate(Point::new(20, 10))
 ///     .into_styled(PrimitiveStyle::with_fill(Rgb565::BLUE))
-///     .draw(&mut display)?;
+///     .draw(&mut display).await?;
 /// # Ok::<(), core::convert::Infallible>(())
+/// # };
 /// ```
 #[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Default)]
 #[cfg_attr(feature = "defmt", derive(::defmt::Format))]

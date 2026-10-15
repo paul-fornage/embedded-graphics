@@ -1,3 +1,7 @@
+#[path = "support/mod.rs"]
+mod test_support;
+use test_support::FutureExt as _;
+
 extern crate embedded_graphics;
 
 use embedded_graphics::{
@@ -37,7 +41,7 @@ impl DrawTarget for FakeDisplay {
     type Color = TestPixelColor;
     type Error = core::convert::Infallible;
 
-    fn draw_iter<I>(&mut self, _pixels: I) -> Result<(), Self::Error>
+    async fn draw_iter<I>(&mut self, _pixels: I) -> Result<(), Self::Error>
     where
         I: IntoIterator<Item = Pixel<Self::Color>>,
     {
@@ -64,7 +68,7 @@ fn it_supports_chaining() -> Result<(), core::convert::Infallible> {
                 .pixels(),
         );
 
-    chained.draw(&mut display)
+    chained.draw(&mut display).ready()
 }
 
 fn multi() -> impl Iterator<Item = Pixel<TestPixelColor>> {
@@ -85,5 +89,5 @@ fn return_from_fn() -> Result<(), core::convert::Infallible> {
 
     let chained = multi();
 
-    chained.draw(&mut display)
+    chained.draw(&mut display).ready()
 }

@@ -11,6 +11,7 @@
 //! 3 color EPD display.
 //!
 //! ```
+//! # let _ = async {
 //! use embedded_graphics::{
 //!     geometry::Size, prelude::*, primitives::{Rectangle, PrimitiveStyle},
 //!     pixelcolor::raw::RawU2,
@@ -60,7 +61,7 @@
 //!     type Color = EpdColor;
 //!     type Error = core::convert::Infallible;
 //!
-//!     fn draw_iter<I>(&mut self, pixels: I) -> Result<(), Self::Error>
+//!     async fn draw_iter<I>(&mut self, pixels: I) -> Result<(), Self::Error>
 //!     where
 //!         I: IntoIterator<Item = Pixel<Self::Color>>,
 //!     {
@@ -86,16 +87,17 @@
 //!
 //! Rectangle::new(Point::new(0, 0), Size::new(100, 100))
 //!     .into_styled(PrimitiveStyle::with_fill(EpdColor::White))
-//!     .draw(&mut display)?;
+//!     .draw(&mut display).await?;
 //!
 //! Rectangle::new(Point::new(100, 0), Size::new(100, 100))
 //!     .into_styled(PrimitiveStyle::with_fill(EpdColor::Black))
-//!     .draw(&mut display)?;
+//!     .draw(&mut display).await?;
 //!
 //! Rectangle::new(Point::new(200, 0), Size::new(100, 100))
 //!     .into_styled(PrimitiveStyle::with_fill(EpdColor::Red))
-//!     .draw(&mut display)?;
+//!     .draw(&mut display).await?;
 //! # Ok::<(), core::convert::Infallible>(())
+//! # };
 //! ```
 //!
 //! The implementation of the [`DrawTarget`] trait uses a `match` statement to

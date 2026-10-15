@@ -106,7 +106,7 @@ impl<C: PixelColor> StyledDrawable<PrimitiveStyle<C>> for Circle {
     type Color = C;
     type Output = ();
 
-    fn draw_styled<D>(
+    async fn draw_styled<D>(
         &self,
         style: &PrimitiveStyle<C>,
         target: &mut D,
@@ -119,19 +119,21 @@ impl<C: PixelColor> StyledDrawable<PrimitiveStyle<C>> for Circle {
                 for scanline in
                     StyledScanlines::new(&style.stroke_area(self), &style.fill_area(self))
                 {
-                    scanline.draw_stroke(target, stroke_color)?;
+                    scanline.draw_stroke(target, stroke_color).await?;
                 }
             }
             (Some(stroke_color), Some(fill_color)) => {
                 for scanline in
                     StyledScanlines::new(&style.stroke_area(self), &style.fill_area(self))
                 {
-                    scanline.draw_stroke_and_fill(target, stroke_color, fill_color)?;
+                    scanline
+                        .draw_stroke_and_fill(target, stroke_color, fill_color)
+                        .await?;
                 }
             }
             (None, Some(fill_color)) => {
                 for scanline in Scanlines::new(&style.fill_area(self)) {
-                    scanline.draw(target, fill_color)?;
+                    scanline.draw(target, fill_color).await?;
                 }
             }
             (None, None) => {}
@@ -186,6 +188,7 @@ impl Iterator for StyledScanlines {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::test_support::FutureExt as _;
     use crate::{
         geometry::{Dimensions, Point},
         iterator::PixelIteratorExt,
@@ -225,11 +228,11 @@ mod tests {
                 .into_styled(PrimitiveStyle::with_fill(BinaryColor::On));
 
             let mut drawable = MockDisplay::new();
-            circle.draw(&mut drawable).unwrap();
+            circle.draw(&mut drawable).ready().unwrap();
             drawable.assert_eq_with_message(&expected, |f| write!(f, "diameter = {diameter}"));
 
             let mut pixels = MockDisplay::new();
-            circle.pixels().draw(&mut pixels).unwrap();
+            circle.pixels().draw(&mut pixels).ready().unwrap();
             pixels.assert_eq_with_message(&expected, |f| write!(f, "diameter = {diameter}"));
         }
     }
@@ -248,13 +251,13 @@ mod tests {
             let circle = Circle::with_center(Point::new_equal(10), diameter).into_styled(style);
 
             let mut drawable = MockDisplay::new();
-            circle.draw(&mut drawable).unwrap();
+            circle.draw(&mut drawable).ready().unwrap();
             drawable.assert_eq_with_message(&expected, |f| {
                 write!(f, "diameter = {diameter}, stroke_width = {stroke_width}")
             });
 
             let mut pixels = MockDisplay::new();
-            circle.pixels().draw(&mut pixels).unwrap();
+            circle.pixels().draw(&mut pixels).ready().unwrap();
             pixels.assert_eq_with_message(&expected, |f| {
                 write!(f, "diameter = {diameter}, stroke_width = {stroke_width}")
             });
@@ -281,13 +284,13 @@ mod tests {
             let circle = Circle::with_center(Point::new_equal(10), diameter).into_styled(style);
 
             let mut drawable = MockDisplay::new();
-            circle.draw(&mut drawable).unwrap();
+            circle.draw(&mut drawable).ready().unwrap();
             drawable.assert_eq_with_message(&expected, |f| {
                 write!(f, "diameter = {diameter}, stroke_width = {stroke_width}")
             });
 
             let mut pixels = MockDisplay::new();
-            circle.pixels().draw(&mut pixels).unwrap();
+            circle.pixels().draw(&mut pixels).ready().unwrap();
             pixels.assert_eq_with_message(&expected, |f| {
                 write!(f, "diameter = {diameter}, stroke_width = {stroke_width}")
             });
@@ -314,6 +317,7 @@ mod tests {
         Circle::new(Point::new(0, 0), 3)
             .into_styled(PrimitiveStyle::with_stroke(BinaryColor::On, 1))
             .draw(&mut display)
+            .ready()
             .unwrap();
 
         display.assert_pattern(&[
@@ -331,6 +335,7 @@ mod tests {
         Circle::new(Point::new(0, 0), 3)
             .into_styled(PrimitiveStyle::with_fill(BinaryColor::On))
             .draw(&mut display)
+            .ready()
             .unwrap();
 
         display.assert_pattern(&[
@@ -373,6 +378,7 @@ mod tests {
         Circle::with_center(CENTER, SIZE)
             .into_styled(style)
             .draw(&mut display_center)
+            .ready()
             .unwrap();
 
         let mut display_inside = MockDisplay::new();
@@ -383,6 +389,7 @@ mod tests {
                     .build(),
             )
             .draw(&mut display_inside)
+            .ready()
             .unwrap();
 
         let mut display_outside = MockDisplay::new();
@@ -393,6 +400,7 @@ mod tests {
                     .build(),
             )
             .draw(&mut display_outside)
+            .ready()
             .unwrap();
 
         display_inside.assert_eq(&display_center);
@@ -449,15 +457,15 @@ mod tests {
         );
 
         let mut display = MockDisplay::new();
-        center.draw(&mut display).unwrap();
+        center.draw(&mut display).ready().unwrap();
         assert_eq!(display.affected_area(), center.bounding_box());
 
         let mut display = MockDisplay::new();
-        outside.draw(&mut display).unwrap();
+        outside.draw(&mut display).ready().unwrap();
         assert_eq!(display.affected_area(), outside.bounding_box());
 
         let mut display = MockDisplay::new();
-        inside.draw(&mut display).unwrap();
+        inside.draw(&mut display).ready().unwrap();
         assert_eq!(display.affected_area(), inside.bounding_box());
     }
 

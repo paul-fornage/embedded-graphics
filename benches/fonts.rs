@@ -1,3 +1,7 @@
+#[path = "../tests/support/mod.rs"]
+mod test_support;
+use test_support::FutureExt as _;
+
 use criterion::*;
 use embedded_graphics::{
     geometry::Point,
@@ -36,28 +40,28 @@ fn font_6x9(c: &mut Criterion) {
         let object = one_line(style);
 
         let mut framebuffer = Framebuffer::new();
-        b.iter(|| object.draw(&mut framebuffer))
+        b.iter(|| object.draw(&mut framebuffer).ready())
     });
 
     group.bench_function("one line with background", |b| {
         let object = one_line(style_with_bg);
 
         let mut framebuffer = Framebuffer::new();
-        b.iter(|| object.draw(&mut framebuffer))
+        b.iter(|| object.draw(&mut framebuffer).ready())
     });
 
     group.bench_function("three lines", |b| {
         let object = three_lines(style);
 
         let mut framebuffer = Framebuffer::new();
-        b.iter(|| object.draw(&mut framebuffer))
+        b.iter(|| object.draw(&mut framebuffer).ready())
     });
 
     group.bench_function("three lines with background)", |b| {
         let object = three_lines(style_with_bg);
 
         let mut framebuffer = Framebuffer::new();
-        b.iter(|| object.draw(&mut framebuffer))
+        b.iter(|| object.draw(&mut framebuffer).ready())
     });
 
     group.finish();
@@ -77,28 +81,28 @@ fn font_10x20(c: &mut Criterion) {
         let object = one_line(style);
 
         let mut framebuffer = Framebuffer::new();
-        b.iter(|| object.draw(&mut framebuffer))
+        b.iter(|| object.draw(&mut framebuffer).ready())
     });
 
     group.bench_function("one line with background", |b| {
         let object = one_line(style_with_bg);
 
         let mut framebuffer = Framebuffer::new();
-        b.iter(|| object.draw(&mut framebuffer))
+        b.iter(|| object.draw(&mut framebuffer).ready())
     });
 
     group.bench_function("three lines", |b| {
         let object = three_lines(style);
 
         let mut framebuffer = Framebuffer::new();
-        b.iter(|| object.draw(&mut framebuffer))
+        b.iter(|| object.draw(&mut framebuffer).ready())
     });
 
     group.bench_function("three lines with background)", |b| {
         let object = three_lines(style_with_bg);
 
         let mut framebuffer = Framebuffer::new();
-        b.iter(|| object.draw(&mut framebuffer))
+        b.iter(|| object.draw(&mut framebuffer).ready())
     });
 
     group.finish();

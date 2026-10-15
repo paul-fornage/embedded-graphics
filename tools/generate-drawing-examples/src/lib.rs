@@ -103,7 +103,7 @@ impl ExampleWriter {
 
             writeln!(file, "//! ```ignore")?;
             for line in &example.code {
-                writeln!(file, "//! {}", line)?;
+                writeln!(file, "//! {}", line.replace(".ready()", ".await"))?;
             }
             writeln!(file, "//! ```")?;
         }

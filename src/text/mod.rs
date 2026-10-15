@@ -42,6 +42,7 @@
 //! ## Draw basic text
 //!
 //! ```
+//! # let _ = async {
 //! use embedded_graphics::{
 //!     mono_font::{ascii::FONT_6X10, MonoTextStyle},
 //!     pixelcolor::Rgb565,
@@ -56,8 +57,9 @@
 //! let style = MonoTextStyle::new(&FONT_6X10, Rgb565::WHITE);
 //!
 //! // Create a text at position (20, 30) and draw it using the previously defined style
-//! Text::new("Hello Rust!", Point::new(20, 30), style).draw(&mut display)?;
+//! Text::new("Hello Rust!", Point::new(20, 30), style).draw(&mut display).await?;
 //! # Ok::<(), core::convert::Infallible>(())
+//! # };
 //! ```
 //! ## Draw centered text
 //!
@@ -65,6 +67,7 @@
 //! these commonly used settings without having to build a [`TextStyle`] object first.
 //!
 //! ```
+//! # let _ = async {
 //! use embedded_graphics::{
 //!     mono_font::{ascii::FONT_6X10, MonoTextStyle},
 //!     pixelcolor::Rgb565,
@@ -85,8 +88,9 @@
 //!     style,
 //!     Alignment::Center,
 //! )
-//! .draw(&mut display)?;
+//! .draw(&mut display).await?;
 //! # Ok::<(), core::convert::Infallible>(())
+//! # };
 //! ```
 //!
 //! ## Draw text with `TextStyle`
@@ -95,6 +99,7 @@
 //! [`TextStyleBuilder`] and then passed to the [`with_text_style`] constructor.
 //!
 //! ```
+//! # let _ = async {
 //! use embedded_graphics::{
 //!     mono_font::{ascii::FONT_6X10, MonoTextStyle},
 //!     pixelcolor::Rgb565,
@@ -121,8 +126,9 @@
 //!     character_style,
 //!     text_style,
 //! )
-//! .draw(&mut display)?;
+//! .draw(&mut display).await?;
 //! # Ok::<(), core::convert::Infallible>(())
+//! # };
 //! ```
 //!
 //! ## Combine different character styles
@@ -131,6 +137,7 @@
 //! used to combine text with different character styles on a single line of text.
 //!
 //! ```
+//! # let _ = async {
 //! use embedded_graphics::{
 //!     mono_font::{ascii::{FONT_6X10, FONT_10X20}, MonoTextStyle},
 //!     pixelcolor::Rgb565,
@@ -146,11 +153,12 @@
 //! let large_style = MonoTextStyle::new(&FONT_10X20, Rgb565::WHITE);
 //!
 //! // Draw the first text at (20, 30) using the small character style.
-//! let next = Text::new("small ", Point::new(20, 30), small_style).draw(&mut display)?;
+//! let next = Text::new("small ", Point::new(20, 30), small_style).draw(&mut display).await?;
 //!
 //! // Draw the second text after the first text using the large character style.
-//! let next = Text::new("large", next, large_style).draw(&mut display)?;
+//! let next = Text::new("large", next, large_style).draw(&mut display).await?;
 //! # Ok::<(), core::convert::Infallible>(())
+//! # };
 //! ```
 //!
 //! [`with_alignment`]: Text::with_alignment()

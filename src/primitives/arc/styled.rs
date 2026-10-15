@@ -73,7 +73,7 @@ impl<C: PixelColor> StyledDrawable<PrimitiveStyle<C>> for Arc {
     type Color = C;
     type Output = ();
 
-    fn draw_styled<D>(
+    async fn draw_styled<D>(
         &self,
         style: &PrimitiveStyle<C>,
         target: &mut D,
@@ -81,7 +81,9 @@ impl<C: PixelColor> StyledDrawable<PrimitiveStyle<C>> for Arc {
     where
         D: DrawTarget<Color = C>,
     {
-        target.draw_iter(StyledPixelsIterator::new(self, style))
+        target
+            .draw_iter(StyledPixelsIterator::new(self, style))
+            .await
     }
 }
 
@@ -105,6 +107,7 @@ impl<C: PixelColor> StyledDimensions<PrimitiveStyle<C>> for Arc {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::test_support::FutureExt as _;
     use crate::{
         draw_target::DrawTargetExt,
         geometry::{AnchorPoint, AngleUnit, Point, Size},
@@ -121,7 +124,8 @@ mod tests {
 
         Arc::new(Point::zero(), 7, 210.0.deg(), 120.0.deg())
             .into_styled(PrimitiveStyle::with_stroke(BinaryColor::On, 1))
-            .draw(&mut display)?;
+            .draw(&mut display)
+            .ready()?;
 
         display.assert_pattern(&[
             "  ###  ", //
@@ -156,13 +160,17 @@ mod tests {
 
                 // Draw expected display by clipping the circle to the quadrant.
                 let mut expected = MockDisplay::new();
-                circle.draw(&mut expected.clipped(&clip_rect)).unwrap();
+                circle
+                    .draw(&mut expected.clipped(&clip_rect))
+                    .ready()
+                    .unwrap();
 
                 // Draw the arc.
                 let mut display = MockDisplay::new();
                 Arc::new(Point::new(1, 1), diameter, angle_start, angle_sweep)
                     .into_styled(style)
                     .draw(&mut display)
+                    .ready()
                     .unwrap();
 
                 display.assert_eq_with_message(&expected, |f| {
@@ -189,6 +197,7 @@ mod tests {
         Arc::with_center(CENTER, SIZE, 0.0.deg(), 90.0.deg())
             .into_styled(style)
             .draw(&mut display_center)
+            .ready()
             .unwrap();
 
         let mut display_inside = MockDisplay::new();
@@ -199,6 +208,7 @@ mod tests {
                     .build(),
             )
             .draw(&mut display_inside)
+            .ready()
             .unwrap();
 
         let mut display_outside = MockDisplay::new();
@@ -209,6 +219,7 @@ mod tests {
                     .build(),
             )
             .draw(&mut display_outside)
+            .ready()
             .unwrap();
 
         display_inside.assert_eq(&display_center);

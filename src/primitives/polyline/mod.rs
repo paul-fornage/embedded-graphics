@@ -25,6 +25,7 @@ pub use styled::StyledPixelsIterator;
 /// This example draws a stylized cardiogram in a 5px green stroke.
 ///
 /// ```rust
+/// # let _ = async {
 /// use embedded_graphics::{
 ///     pixelcolor::Rgb565, prelude::*, primitives::{Polyline, PrimitiveStyle},
 /// };
@@ -50,8 +51,9 @@ pub use styled::StyledPixelsIterator;
 ///
 /// Polyline::new(&points)
 ///     .into_styled(line_style)
-///     .draw(&mut display)?;
+///     .draw(&mut display).await?;
 /// # Ok::<(), core::convert::Infallible>(())
+/// # };
 /// ```
 #[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Default)]
 #[cfg_attr(feature = "defmt", derive(::defmt::Format))]

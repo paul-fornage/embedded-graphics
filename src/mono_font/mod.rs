@@ -226,6 +226,7 @@ const NULL_FONT: MonoFont = MonoFont {
 
 #[cfg(test)]
 pub(crate) mod tests {
+    use crate::test_support::FutureExt as _;
     use arrayvec::ArrayString;
 
     use super::*;
@@ -254,6 +255,7 @@ pub(crate) mod tests {
         let mut display = MockDisplay::new();
         Text::with_baseline(text, Point::zero(), style, Baseline::Top)
             .draw(&mut display)
+            .ready()
             .unwrap();
 
         display.assert_pattern(pattern);
@@ -272,6 +274,7 @@ pub(crate) mod tests {
         let mut display = MockDisplay::new();
         Text::with_baseline("A", Point::zero(), style, Baseline::Top)
             .draw(&mut display)
+            .ready()
             .unwrap();
 
         let baseline = display.affected_area().bottom_right().unwrap().y as u32;
@@ -364,6 +367,7 @@ pub(crate) mod tests {
             let mut expected = new_framebuffer();
             Image::new(&font.image, Point::zero())
                 .draw(&mut expected)
+                .ready()
                 .unwrap();
 
             let chars_per_row = (font.image.size().width / font.character_size.width) as usize;
@@ -384,6 +388,7 @@ pub(crate) mod tests {
                 Baseline::Top,
             )
             .draw(&mut output)
+            .ready()
             .unwrap();
 
             if expected != output {
@@ -417,6 +422,7 @@ pub(crate) mod tests {
             MonoTextStyle::new(&ZERO_WIDTH, BinaryColor::On),
         )
         .draw(&mut display)
+        .ready()
         .unwrap();
 
         display.assert_pattern(&[]);
@@ -441,6 +447,7 @@ pub(crate) mod tests {
             MonoTextStyle::new(&NOT_WIDE_ENOUGH, BinaryColor::On),
         )
         .draw(&mut display)
+        .ready()
         .unwrap();
 
         display.assert_pattern(&[]);
@@ -465,6 +472,7 @@ pub(crate) mod tests {
             MonoTextStyle::new(&NOT_HIGH_ENOUGH, BinaryColor::On),
         )
         .draw(&mut display)
+        .ready()
         .unwrap();
 
         display.assert_pattern(&["# #"]);

@@ -60,6 +60,7 @@ impl Iterator for Points {
 
 #[cfg(test)]
 mod tests {
+    use crate::test_support::FutureExt as _;
 
     use super::*;
     use crate::{
@@ -92,6 +93,7 @@ mod tests {
             line.points()
                 .map(|point| Pixel(point, BinaryColor::On))
                 .draw(&mut display)
+                .ready()
                 .unwrap();
         }
 

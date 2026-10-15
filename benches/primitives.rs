@@ -1,3 +1,7 @@
+#[path = "../tests/support/mod.rs"]
+mod test_support;
+use test_support::FutureExt as _;
+
 use criterion::*;
 use embedded_graphics::{geometry::AnchorPoint, pixelcolor::Gray8, prelude::*, primitives::*};
 
@@ -148,7 +152,7 @@ where
         let object = build().into_styled(style);
 
         let mut framebuffer = Framebuffer::new();
-        b.iter(|| object.draw(&mut framebuffer))
+        b.iter(|| object.draw(&mut framebuffer).ready())
     });
 
     group.bench_function("stroke 1px", |b| {
@@ -160,7 +164,7 @@ where
         let object = build().into_styled(style);
 
         let mut framebuffer = Framebuffer::new();
-        b.iter(|| object.draw(&mut framebuffer))
+        b.iter(|| object.draw(&mut framebuffer).ready())
     });
 
     group.bench_function("stroke 10px", |b| {
@@ -172,7 +176,7 @@ where
         let object = build().into_styled(style);
 
         let mut framebuffer = Framebuffer::new();
-        b.iter(|| object.draw(&mut framebuffer))
+        b.iter(|| object.draw(&mut framebuffer).ready())
     });
 
     group.bench_function("stroke 1px and fill", |b| {
@@ -185,7 +189,7 @@ where
         let object = build().into_styled(style);
 
         let mut framebuffer = Framebuffer::new();
-        b.iter(|| object.draw(&mut framebuffer))
+        b.iter(|| object.draw(&mut framebuffer).ready())
     });
 
     group.bench_function("stroke 10px and fill", |b| {
@@ -198,7 +202,7 @@ where
         let object = build().into_styled(style);
 
         let mut framebuffer = Framebuffer::new();
-        b.iter(|| object.draw(&mut framebuffer))
+        b.iter(|| object.draw(&mut framebuffer).ready())
     });
 
     group.finish()
@@ -216,7 +220,7 @@ where
         let object = build().into_styled(style);
 
         let mut framebuffer = Framebuffer::new();
-        b.iter(|| object.draw(&mut framebuffer))
+        b.iter(|| object.draw(&mut framebuffer).ready())
     });
 
     group.bench_function("stroke 10px", |b| {
@@ -224,7 +228,7 @@ where
         let object = build().into_styled(style);
 
         let mut framebuffer = Framebuffer::new();
-        b.iter(|| object.draw(&mut framebuffer))
+        b.iter(|| object.draw(&mut framebuffer).ready())
     });
 
     group.bench_function("stroke 50px", |b| {
@@ -232,7 +236,7 @@ where
         let object = build().into_styled(style);
 
         let mut framebuffer = Framebuffer::new();
-        b.iter(|| object.draw(&mut framebuffer))
+        b.iter(|| object.draw(&mut framebuffer).ready())
     });
 
     group.finish()

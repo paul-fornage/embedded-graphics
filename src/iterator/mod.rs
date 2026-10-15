@@ -29,13 +29,14 @@ where
 }
 
 /// Extension trait for pixel iterators.
+#[allow(async_fn_in_trait)] // Futures may stay on the local embedded executor.
 pub trait PixelIteratorExt<C>
 where
     Self: Sized,
     C: PixelColor,
 {
     /// Draws the pixel iterator to a draw target.
-    fn draw<D>(self, target: &mut D) -> Result<(), D::Error>
+    async fn draw<D>(self, target: &mut D) -> Result<(), D::Error>
     where
         D: DrawTarget<Color = C>;
 
@@ -48,11 +49,11 @@ where
     C: PixelColor,
     I: Iterator<Item = Pixel<C>>,
 {
-    fn draw<D>(self, target: &mut D) -> Result<(), D::Error>
+    async fn draw<D>(self, target: &mut D) -> Result<(), D::Error>
     where
         D: DrawTarget<Color = C>,
     {
-        target.draw_iter(self)
+        target.draw_iter(self).await
     }
 
     fn translated(self, offset: Point) -> pixel::Translated<Self> {
@@ -62,6 +63,7 @@ where
 
 #[cfg(test)]
 mod tests {
+    use crate::test_support::FutureExt as _;
     use crate::{
         geometry::Point, iterator::PixelIteratorExt, mock_display::MockDisplay,
         pixelcolor::BinaryColor, Pixel,
@@ -77,7 +79,7 @@ mod tests {
         ];
 
         let mut display = MockDisplay::new();
-        pixels.iter().copied().draw(&mut display).unwrap();
+        pixels.iter().copied().draw(&mut display).ready().unwrap();
 
         display.assert_pattern(&[
             "#.#", //

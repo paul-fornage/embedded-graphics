@@ -102,7 +102,7 @@ impl<C: PixelColor> StyledDrawable<PrimitiveStyle<C>> for Ellipse {
     type Color = C;
     type Output = ();
 
-    fn draw_styled<D>(
+    async fn draw_styled<D>(
         &self,
         style: &PrimitiveStyle<C>,
         target: &mut D,
@@ -115,19 +115,21 @@ impl<C: PixelColor> StyledDrawable<PrimitiveStyle<C>> for Ellipse {
                 for scanline in
                     StyledScanlines::new(&style.stroke_area(self), &style.fill_area(self))
                 {
-                    scanline.draw_stroke(target, stroke_color)?;
+                    scanline.draw_stroke(target, stroke_color).await?;
                 }
             }
             (Some(stroke_color), Some(fill_color)) => {
                 for scanline in
                     StyledScanlines::new(&style.stroke_area(self), &style.fill_area(self))
                 {
-                    scanline.draw_stroke_and_fill(target, stroke_color, fill_color)?;
+                    scanline
+                        .draw_stroke_and_fill(target, stroke_color, fill_color)
+                        .await?;
                 }
             }
             (None, Some(fill_color)) => {
                 for scanline in Scanlines::new(&style.fill_area(self)) {
-                    scanline.draw(target, fill_color)?;
+                    scanline.draw(target, fill_color).await?;
                 }
             }
             (None, None) => {}
@@ -185,6 +187,7 @@ impl Iterator for StyledScanlines {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::test_support::FutureExt as _;
     use crate::{
         geometry::{Point, Size},
         iterator::PixelIteratorExt,
@@ -202,12 +205,14 @@ mod tests {
             Circle::new(top_left, diameter)
                 .into_styled(style)
                 .draw(&mut expected)
+                .ready()
                 .unwrap();
 
             let mut display = MockDisplay::new();
             Ellipse::new(top_left, Size::new(diameter, diameter))
                 .into_styled(style)
                 .draw(&mut display)
+                .ready()
                 .unwrap();
 
             display.assert_eq_with_message(&expected, |f| write!(f, "diameter = {diameter}"));
@@ -218,11 +223,11 @@ mod tests {
         let ellipse = Ellipse::new(Point::new(0, 0), size).into_styled(style);
 
         let mut drawable = MockDisplay::new();
-        ellipse.draw(&mut drawable).unwrap();
+        ellipse.draw(&mut drawable).ready().unwrap();
         drawable.assert_pattern(pattern);
 
         let mut pixels = MockDisplay::new();
-        ellipse.pixels().draw(&mut pixels).unwrap();
+        ellipse.pixels().draw(&mut pixels).ready().unwrap();
         pixels.assert_pattern(pattern);
     }
 
@@ -347,6 +352,7 @@ mod tests {
         Ellipse::with_center(CENTER, SIZE)
             .into_styled(style)
             .draw(&mut display_center)
+            .ready()
             .unwrap();
 
         let mut display_inside = MockDisplay::new();
@@ -357,6 +363,7 @@ mod tests {
                     .build(),
             )
             .draw(&mut display_inside)
+            .ready()
             .unwrap();
 
         let mut display_outside = MockDisplay::new();
@@ -367,6 +374,7 @@ mod tests {
                     .build(),
             )
             .draw(&mut display_outside)
+            .ready()
             .unwrap();
 
         display_inside.assert_eq(&display_center);
@@ -393,15 +401,15 @@ mod tests {
         );
 
         let mut display = MockDisplay::new();
-        center.draw(&mut display).unwrap();
+        center.draw(&mut display).ready().unwrap();
         assert_eq!(display.affected_area(), center.bounding_box());
 
         let mut display = MockDisplay::new();
-        outside.draw(&mut display).unwrap();
+        outside.draw(&mut display).ready().unwrap();
         assert_eq!(display.affected_area(), outside.bounding_box());
 
         let mut display = MockDisplay::new();
-        inside.draw(&mut display).unwrap();
+        inside.draw(&mut display).ready().unwrap();
         assert_eq!(display.affected_area(), inside.bounding_box());
     }
 

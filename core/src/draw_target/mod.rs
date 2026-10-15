@@ -40,6 +40,7 @@ use crate::{
 /// while they are executed and the [`Error` type] can be set to `core::convert::Infallible`.
 ///
 /// ```rust
+/// # let _ = async {
 /// use core::convert::TryInto;
 /// use embedded_graphics::{
 ///     pixelcolor::{Gray8, GrayColor},
@@ -83,7 +84,7 @@ use crate::{
 ///     // this the type `Infallible` was chosen as the `Error` type.
 ///     type Error = core::convert::Infallible;
 ///
-///     fn draw_iter<I>(&mut self, pixels: I) -> Result<(), Self::Error>
+///     async fn draw_iter<I>(&mut self, pixels: I) -> Result<(), Self::Error>
 ///     where
 ///         I: IntoIterator<Item = Pixel<Self::Color>>,
 ///     {
@@ -117,11 +118,12 @@ use crate::{
 /// let circle = Circle::new(Point::new(22, 22), 20)
 ///     .into_styled(PrimitiveStyle::with_stroke(Gray8::WHITE, 1));
 ///
-/// circle.draw(&mut display)?;
+/// circle.draw(&mut display).await?;
 ///
 /// // Update the display
 /// display.flush().unwrap();
 /// # Ok::<(), core::convert::Infallible>(())
+/// # };
 /// ```
 ///
 /// # Hardware acceleration - solid rectangular fill
@@ -138,6 +140,7 @@ use crate::{
 /// transmit 8 bytes to the display, which is far less then what is required to transmit each pixel
 /// color inside the filled area.
 /// ```rust
+/// # let _ = async {
 /// use core::convert::TryInto;
 /// use embedded_graphics::{
 ///     pixelcolor::{raw::RawU16, Rgb565, RgbColor},
@@ -183,7 +186,7 @@ use crate::{
 ///     type Color = Rgb565;
 ///     type Error = CommError;
 ///
-///     fn draw_iter<I>(&mut self, pixels: I) -> Result<(), Self::Error>
+///     async fn draw_iter<I>(&mut self, pixels: I) -> Result<(), Self::Error>
 ///     where
 ///         I: IntoIterator<Item = Pixel<Self::Color>>,
 ///     {
@@ -199,7 +202,7 @@ use crate::{
 ///         Ok(())
 ///     }
 ///
-///     fn fill_solid(&mut self, area: &Rectangle, color: Self::Color) -> Result<(), Self::Error> {
+///     async fn fill_solid(&mut self, area: &Rectangle, color: Self::Color) -> Result<(), Self::Error> {
 ///         // Clamp the rectangle coordinates to the valid range by determining
 ///         // the intersection of the fill area and the visible display area
 ///         // by using Rectangle::intersection.
@@ -254,7 +257,7 @@ use crate::{
 ///             .fill_color(Rgb565::GREEN)
 ///             .build(),
 ///     )
-///     .draw(&mut display)?;
+///     .draw(&mut display).await?;
 ///
 /// // Draw a circle with top-left at `(5, 5)` with a diameter of `10` and a magenta stroke with
 /// // cyan fill. This shape cannot be optimized by calls to `fill_solid` as it contains transparent
@@ -268,9 +271,10 @@ use crate::{
 ///             .fill_color(Rgb565::CYAN)
 ///             .build(),
 ///     )
-///     .draw(&mut display)?;
+///     .draw(&mut display).await?;
 ///
 /// # Ok::<(), CommError>(())
+/// # };
 /// ```
 ///
 /// [`fill_solid`]: DrawTarget::fill_solid()
@@ -278,6 +282,7 @@ use crate::{
 /// [`Dimensions`]: super::geometry::Dimensions
 /// [`OriginDimensions`]: super::geometry::OriginDimensions
 /// [`Error` type]: DrawTarget::Error
+#[allow(async_fn_in_trait)] // Futures may stay on the local embedded executor.
 pub trait DrawTarget: Dimensions {
     /// The pixel color type the targetted display supports.
     type Color: PixelColor;
@@ -299,7 +304,7 @@ pub trait DrawTarget: Dimensions {
     /// drawing method for a display that writes data to the hardware immediately. If possible, the
     /// other methods in this trait should be implemented to improve performance when rendering
     /// more contiguous pixel patterns.
-    fn draw_iter<I>(&mut self, pixels: I) -> Result<(), Self::Error>
+    async fn draw_iter<I>(&mut self, pixels: I) -> Result<(), Self::Error>
     where
         I: IntoIterator<Item = Pixel<Self::Color>>;
 
@@ -333,6 +338,7 @@ pub trait DrawTarget: Dimensions {
     /// display area, no pixels will be drawn.
     ///
     /// ```rust
+    /// # let _ = async {
     /// use embedded_graphics::{
     ///     pixelcolor::{Gray8, GrayColor},
     ///     prelude::*,
@@ -345,7 +351,7 @@ pub trait DrawTarget: Dimensions {
     ///     type Color = Gray8;
     ///     type Error = core::convert::Infallible;
     ///
-    ///     fn draw_iter<I>(&mut self, pixels: I) -> Result<(), Self::Error>
+    ///     async fn draw_iter<I>(&mut self, pixels: I) -> Result<(), Self::Error>
     ///     where
     ///         I: IntoIterator<Item = Pixel<Self::Color>>,
     ///     {
@@ -354,7 +360,7 @@ pub trait DrawTarget: Dimensions {
     ///         Ok(())
     ///     }
     ///
-    ///     fn fill_contiguous<I>(&mut self, area: &Rectangle, colors: I) -> Result<(), Self::Error>
+    ///     async fn fill_contiguous<I>(&mut self, area: &Rectangle, colors: I) -> Result<(), Self::Error>
     ///     where
     ///         I: IntoIterator<Item = Self::Color>,
     ///     {
@@ -368,7 +374,7 @@ pub trait DrawTarget: Dimensions {
     ///                     .zip(colors)
     ///                     .filter(|(pos, _color)| drawable_area.contains(*pos))
     ///                     .map(|(pos, color)| Pixel(pos, color)),
-    ///             )
+    ///             ).await
     ///         } else {
     ///             Ok(())
     ///         }
@@ -380,12 +386,13 @@ pub trait DrawTarget: Dimensions {
     ///         Size::new(64, 64)
     ///     }
     /// }
+    /// # };
     /// ```
     ///
     /// [`draw_iter`]: DrawTarget::draw_iter
     /// [`Rectangle::intersection`]: super::primitives::rectangle::Rectangle::intersection()
     /// [`PointsIter::points`]: super::primitives::PointsIter::points
-    fn fill_contiguous<I>(&mut self, area: &Rectangle, colors: I) -> Result<(), Self::Error>
+    async fn fill_contiguous<I>(&mut self, area: &Rectangle, colors: I) -> Result<(), Self::Error>
     where
         I: IntoIterator<Item = Self::Color>,
     {
@@ -394,6 +401,7 @@ pub trait DrawTarget: Dimensions {
                 .zip(colors)
                 .map(|(pos, color)| Pixel(pos, color)),
         )
+        .await
     }
 
     /// Fill a given area with a solid color.
@@ -404,8 +412,12 @@ pub trait DrawTarget: Dimensions {
     ///
     /// The default implementation of this method calls [`fill_contiguous`](DrawTarget::fill_contiguous())
     /// with an iterator that repeats the given `color` for every point in `area`.
-    fn fill_solid(&mut self, area: &Rectangle, color: Self::Color) -> Result<(), Self::Error> {
-        self.fill_contiguous(area, core::iter::repeat(color))
+    async fn fill_solid(
+        &mut self,
+        area: &Rectangle,
+        color: Self::Color,
+    ) -> Result<(), Self::Error> {
+        self.fill_contiguous(area, core::iter::repeat(color)).await
     }
 
     /// Fill the entire display with a solid color.
@@ -419,7 +431,7 @@ pub trait DrawTarget: Dimensions {
     /// [`Dimensions`]: super::geometry::Dimensions
     /// [`bounding_box`]: super::geometry::Dimensions::bounding_box
     /// [`fill_solid`]: DrawTarget::fill_solid()
-    fn clear(&mut self, color: Self::Color) -> Result<(), Self::Error> {
-        self.fill_solid(&self.bounding_box(), color)
+    async fn clear(&mut self, color: Self::Color) -> Result<(), Self::Error> {
+        self.fill_solid(&self.bounding_box(), color).await
     }
 }

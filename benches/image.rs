@@ -1,3 +1,7 @@
+#[path = "../tests/support/mod.rs"]
+mod test_support;
+use test_support::FutureExt as _;
+
 use criterion::*;
 use embedded_graphics::{
     image::{Image, ImageRaw},
@@ -17,7 +21,7 @@ fn image_1bpp(c: &mut Criterion) {
         let object = Image::new(&image, Point::zero());
 
         let mut framebuffer = Framebuffer::new();
-        b.iter(|| object.draw(&mut framebuffer))
+        b.iter(|| object.draw(&mut framebuffer).ready())
     });
 }
 

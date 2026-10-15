@@ -49,6 +49,7 @@ pub enum ImageRawError {
 /// This example creates an image from 1 bit per pixel data.
 ///
 /// ```
+/// # let _ = async {
 /// use embedded_graphics::{
 ///     image::{Image, ImageRaw},
 ///     pixelcolor::BinaryColor,
@@ -77,8 +78,9 @@ pub enum ImageRawError {
 ///
 /// let mut display = Display::default();
 ///
-/// image.draw(&mut display)?;
+/// image.draw(&mut display).await?;
 /// # Ok::<(), core::convert::Infallible>(())
+/// # };
 /// ```
 ///
 /// ## Draw an image that uses multibyte pixel encoding
@@ -204,19 +206,21 @@ where
 {
     type Color = C;
 
-    fn draw<D>(&self, target: &mut D) -> Result<(), D::Error>
+    async fn draw<D>(&self, target: &mut D) -> Result<(), D::Error>
     where
         D: DrawTarget<Color = C>,
     {
         let row_skip = self.data_width() - self.size.width;
 
-        target.fill_contiguous(
-            &self.bounding_box(),
-            ContiguousPixels::new(self, self.size, 0, row_skip as usize),
-        )
+        target
+            .fill_contiguous(
+                &self.bounding_box(),
+                ContiguousPixels::new(self, self.size, 0, row_skip as usize),
+            )
+            .await
     }
 
-    fn draw_sub_image<D>(&self, target: &mut D, area: &Rectangle) -> Result<(), D::Error>
+    async fn draw_sub_image<D>(&self, target: &mut D, area: &Rectangle) -> Result<(), D::Error>
     where
         D: DrawTarget<Color = Self::Color>,
     {
@@ -235,10 +239,12 @@ where
         let initial_skip = area.top_left.y as usize * data_width + area.top_left.x as usize;
         let row_skip = data_width - area.size.width as usize;
 
-        target.fill_contiguous(
-            &Rectangle::new(Point::zero(), area.size),
-            ContiguousPixels::new(self, area.size, initial_skip, row_skip),
-        )
+        target
+            .fill_contiguous(
+                &Rectangle::new(Point::zero(), area.size),
+                ContiguousPixels::new(self, area.size, initial_skip, row_skip),
+            )
+            .await
     }
 }
 
@@ -343,6 +349,7 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::test_support::FutureExt as _;
     use crate::{
         draw_target::DrawTarget,
         geometry::Point,
@@ -381,7 +388,7 @@ mod tests {
     {
         let image = Image::new(&image_data, Point::zero());
         let mut display = MockDisplay::new();
-        image.draw(&mut display).unwrap();
+        image.draw(&mut display).ready().unwrap();
 
         display.assert_pattern(expected_pattern);
     }
@@ -501,6 +508,7 @@ mod tests {
         let mut display = MockDisplay::new();
         Image::new(&image_data, Point::zero())
             .draw(&mut display)
+            .ready()
             .unwrap();
 
         let mut expected = MockDisplay::new();
@@ -509,6 +517,7 @@ mod tests {
                 &expected.bounding_box(),
                 data.iter().copied().map(Gray8::new),
             )
+            .ready()
             .unwrap();
 
         display.assert_eq(&expected);
@@ -653,6 +662,7 @@ mod tests {
         let mut display = MockDisplay::new();
         Image::new(&image_data, Point::zero())
             .draw(&mut display)
+            .ready()
             .unwrap();
 
         let expected = [
@@ -667,6 +677,7 @@ mod tests {
             .iter()
             .copied()
             .draw(&mut expected_display)
+            .ready()
             .unwrap();
 
         // assert_eq can't be used here because ColorMapping isn't implemented for TestColorU32
@@ -686,6 +697,7 @@ mod tests {
         let mut display = MockDisplay::new();
         Image::new(&image_data, Point::zero())
             .draw(&mut display)
+            .ready()
             .unwrap();
 
         let expected = [
@@ -700,6 +712,7 @@ mod tests {
             .iter()
             .copied()
             .draw(&mut expected_display)
+            .ready()
             .unwrap();
 
         // assert_eq can't be used here because ColorMapping isn't implemented for TestColorU32
@@ -714,6 +727,7 @@ mod tests {
         let mut display = MockDisplay::new();
         Image::new(&image, Point::zero())
             .draw(&mut display)
+            .ready()
             .unwrap();
 
         display.assert_pattern(&[]);
@@ -727,6 +741,7 @@ mod tests {
         let mut display = MockDisplay::new();
         Image::new(&image, Point::zero())
             .draw(&mut display)
+            .ready()
             .unwrap();
 
         display.assert_pattern(&[]);

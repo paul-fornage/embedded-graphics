@@ -19,6 +19,7 @@ pub use styled::StyledPixelsIterator;
 /// ## Create some ellipses with different styles
 ///
 /// ```rust
+/// # let _ = async {
 /// use embedded_graphics::{
 ///     pixelcolor::Rgb565,
 ///     prelude::*,
@@ -30,7 +31,7 @@ pub use styled::StyledPixelsIterator;
 /// # let mut display = MockDisplay::default();
 /// Ellipse::new(Point::new(10, 20), Size::new(30, 40))
 ///     .into_styled(PrimitiveStyle::with_stroke(Rgb565::WHITE, 1))
-///     .draw(&mut display)?;
+///     .draw(&mut display).await?;
 ///
 /// // Ellipse with styled stroke and fill with top-left point at (20, 30) with a size of (40, 30)
 /// let style = PrimitiveStyleBuilder::new()
@@ -42,15 +43,16 @@ pub use styled::StyledPixelsIterator;
 /// # let mut display = MockDisplay::default();
 /// Ellipse::new(Point::new(20, 30), Size::new(40, 30))
 ///     .into_styled(style)
-///     .draw(&mut display)?;
+///     .draw(&mut display).await?;
 ///
 /// // Ellipse with blue fill and no stroke with a translation applied
 /// # let mut display = MockDisplay::default();
 /// Ellipse::new(Point::new(10, 20), Size::new(20, 40))
 ///     .translate(Point::new(10, -15))
 ///     .into_styled(PrimitiveStyle::with_fill(Rgb565::BLUE))
-///     .draw(&mut display)?;
+///     .draw(&mut display).await?;
 /// # Ok::<(), core::convert::Infallible>(())
+/// # };
 /// ```
 #[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Default)]
 #[cfg_attr(feature = "defmt", derive(::defmt::Format))]

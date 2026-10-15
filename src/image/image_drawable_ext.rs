@@ -14,6 +14,7 @@ pub trait ImageDrawableExt: Sized {
     /// a display, with their top-left corners positioned at `(0, 0)` and `(32, 8)`.
     ///
     /// ```rust
+    /// # let _ = async {
     /// use embedded_graphics::{
     ///     image::{Image, ImageRaw, ImageRawBE},
     ///     pixelcolor::Rgb565,
@@ -32,10 +33,11 @@ pub trait ImageDrawableExt: Sized {
     /// let sprite_1 = sprite_atlas.sub_image(&Rectangle::new(Point::new(0, 0), Size::new(16, 16)));
     /// let sprite_2 = sprite_atlas.sub_image(&Rectangle::new(Point::new(16, 0), Size::new(16, 16)));
     ///
-    /// Image::new(&sprite_1, Point::new(0, 0)).draw(&mut display)?;
-    /// Image::new(&sprite_2, Point::new(32, 8)).draw(&mut display)?;
+    /// Image::new(&sprite_1, Point::new(0, 0)).draw(&mut display).await?;
+    /// Image::new(&sprite_2, Point::new(32, 8)).draw(&mut display).await?;
     ///
     /// # Ok::<(), core::convert::Infallible>(())
+    /// # };
     /// ```
     fn sub_image(&self, area: &Rectangle) -> SubImage<'_, Self>;
 }

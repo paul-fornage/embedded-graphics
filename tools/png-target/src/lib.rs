@@ -64,7 +64,7 @@ impl DrawTarget for PngTarget<BinaryColor> {
     type Color = BinaryColor;
     type Error = std::convert::Infallible;
 
-    fn draw_iter<I>(&mut self, pixels: I) -> Result<(), Self::Error>
+    async fn draw_iter<I>(&mut self, pixels: I) -> Result<(), Self::Error>
     where
         I: IntoIterator<Item = Pixel<Self::Color>>,
     {
@@ -88,7 +88,7 @@ impl DrawTarget for PngTarget<Rgb888> {
     type Color = Rgb888;
     type Error = std::convert::Infallible;
 
-    fn draw_iter<I>(&mut self, pixels: I) -> Result<(), Self::Error>
+    async fn draw_iter<I>(&mut self, pixels: I) -> Result<(), Self::Error>
     where
         I: IntoIterator<Item = Pixel<Self::Color>>,
     {

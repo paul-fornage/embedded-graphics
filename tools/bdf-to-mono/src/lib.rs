@@ -1,3 +1,7 @@
+#[path = "../../../tests/support/mod.rs"]
+mod test_support;
+use test_support::FutureExt as _;
+
 use anyhow::{anyhow, Result};
 use bdf_parser::BdfFont;
 use embedded_graphics::{pixelcolor::BinaryColor, prelude::*};
@@ -152,6 +156,7 @@ impl MonoFontData {
             .filter(|p| self.pixel(p.x as usize, p.y as usize))
             .map(|p| Pixel(p, BinaryColor::On))
             .draw(&mut png)
+            .ready()
             .unwrap();
 
         png

@@ -1,3 +1,7 @@
+#[path = "support/mod.rs"]
+mod test_support;
+use test_support::FutureExt as _;
+
 use embedded_graphics::{
     mock_display::MockDisplay,
     pixelcolor::Rgb888,
@@ -15,7 +19,7 @@ struct GenericTextStyle<C>(C);
 impl<C: PixelColor> TextRenderer for GenericTextStyle<C> {
     type Color = C;
 
-    fn draw_string<D>(
+    async fn draw_string<D>(
         &self,
         text: &str,
         position: Point,
@@ -27,12 +31,12 @@ impl<C: PixelColor> TextRenderer for GenericTextStyle<C> {
     {
         let metrics = self.measure_string(text, position, baseline);
 
-        target.fill_solid(&metrics.bounding_box, self.0)?;
+        target.fill_solid(&metrics.bounding_box, self.0).await?;
 
         Ok(metrics.next_position)
     }
 
-    fn draw_whitespace<D>(
+    async fn draw_whitespace<D>(
         &self,
         _width: u32,
         _position: Point,
@@ -67,6 +71,7 @@ fn generic_text_renderer() {
 
     Text::new("ab\nc", Point::zero(), GenericTextStyle(Rgb888::RED))
         .draw(&mut target)
+        .ready()
         .unwrap();
 
     target.assert_pattern(&[

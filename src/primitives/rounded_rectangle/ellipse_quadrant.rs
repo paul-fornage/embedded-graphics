@@ -57,6 +57,7 @@ impl ContainsPoint for EllipseQuadrant {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::test_support::FutureExt as _;
     use crate::{
         draw_target::DrawTarget,
         geometry::{Point, Size},
@@ -77,6 +78,7 @@ mod tests {
             .filter(|p| quadrant.contains(*p))
             .map(|p| Pixel(p, BinaryColor::On))
             .draw(target)
+            .ready()
     }
 
     #[test]

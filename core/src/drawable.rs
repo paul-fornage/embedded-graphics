@@ -8,6 +8,7 @@ use crate::{draw_target::DrawTarget, geometry::Point, pixelcolor::PixelColor};
 /// over pixels being rendered with [`DrawTarget`]'s [`draw_iter`] method.
 ///
 /// ```rust
+/// # let _ = async {
 /// use embedded_graphics::{
 ///     mono_font::{ascii::FONT_6X9, MonoTextStyle},
 ///     pixelcolor::{BinaryColor, PixelColor, Rgb888},
@@ -31,17 +32,17 @@ use crate::{draw_target::DrawTarget, geometry::Point, pixelcolor::PixelColor};
 ///     type Color = C;
 ///     type Output = ();
 ///
-///     fn draw<D>(&self, target: &mut D) -> Result<Self::Output, D::Error>
+///     async fn draw<D>(&self, target: &mut D) -> Result<Self::Output, D::Error>
 ///     where
 ///         D: DrawTarget<Color = C>,
 ///     {
 ///         Rectangle::new(self.top_left, self.size)
 ///             .into_styled(PrimitiveStyle::with_fill(self.bg_color))
-///             .draw(target)?;
+///             .draw(target).await?;
 ///
 ///         let style = MonoTextStyle::new(&FONT_6X9, self.fg_color);
 ///
-///         Text::new(self.text, Point::new(6, 13), style).draw(target)?;
+///         Text::new(self.text, Point::new(6, 13), style).draw(target).await?;
 ///
 ///         Ok(())
 ///     }
@@ -58,12 +59,14 @@ use crate::{draw_target::DrawTarget, geometry::Point, pixelcolor::PixelColor};
 /// # use embedded_graphics::mock_display::MockDisplay;
 /// # let mut display = MockDisplay::default();
 /// # display.set_allow_overdraw(true);
-/// button.draw(&mut display)?;
+/// button.draw(&mut display).await?;
 /// # Ok::<(), core::convert::Infallible>(())
+/// # };
 /// ```
 ///
 /// [`DrawTarget`]: crate::draw_target::DrawTarget
 /// [`draw_iter`]: crate::draw_target::DrawTarget::draw_iter
+#[allow(async_fn_in_trait)] // Futures may stay on the local embedded executor.
 pub trait Drawable {
     /// The pixel color type.
     type Color: PixelColor;
@@ -75,6 +78,7 @@ pub trait Drawable {
     /// can make use of a returned value, allowing the next text to be positioned after the first:
     ///
     /// ```
+    /// # let _ = async {
     /// use embedded_graphics::{
     ///     mono_font::{
     ///         ascii::{FONT_10X20, FONT_6X10},
@@ -91,17 +95,18 @@ pub trait Drawable {
     /// let value_style = MonoTextStyle::new(&FONT_10X20, BinaryColor::On);
     ///
     /// let next_point = Text::new("Label ", Point::new(10, 20), label_style)
-    ///     .draw(&mut display)?;
+    ///     .draw(&mut display).await?;
     ///
-    /// Text::new("1234", next_point, value_style).draw(&mut display)?;
+    /// Text::new("1234", next_point, value_style).draw(&mut display).await?;
     /// # Ok::<(), core::convert::Infallible>(())
+    /// # };
     /// ```
     ///
     /// Use `()` if no value should be returned.
     type Output;
 
     /// Draw the graphics object using the supplied DrawTarget.
-    fn draw<D>(&self, target: &mut D) -> Result<Self::Output, D::Error>
+    async fn draw<D>(&self, target: &mut D) -> Result<Self::Output, D::Error>
     where
         D: DrawTarget<Color = Self::Color>;
 }
@@ -115,25 +120,29 @@ pub trait Drawable {
 /// The [`Drawable`] trait is implemented for `Pixel` which allows single pixels
 /// to be drawn to a [`DrawTarget`]:
 /// ```
+/// # let _ = async {
 /// use embedded_graphics::{pixelcolor::BinaryColor, prelude::*};
 /// # use embedded_graphics::mock_display::MockDisplay;
 /// # let mut display = MockDisplay::new();
 ///
-/// Pixel(Point::new(1, 2), BinaryColor::On).draw(&mut display)?;
+/// Pixel(Point::new(1, 2), BinaryColor::On).draw(&mut display).await?;
 /// # Ok::<(), core::convert::Infallible>(())
+/// # };
 /// ```
 ///
 /// Iterators with `Pixel` items can also be drawn:
 ///
 /// ```
+/// # let _ = async {
 /// use embedded_graphics::{pixelcolor::BinaryColor, prelude::*};
 /// # use embedded_graphics::mock_display::MockDisplay;
 /// # let mut display = MockDisplay::new();
 ///
 /// (0..32)
 ///     .map(|i| Pixel(Point::new(i, i * 2), BinaryColor::On))
-///     .draw(&mut display)?;
+///     .draw(&mut display).await?;
 /// # Ok::<(), core::convert::Infallible>(())
+/// # };
 /// ```
 ///
 /// [`DrawTarget`]: crate::draw_target::DrawTarget
@@ -150,16 +159,17 @@ where
     type Color = C;
     type Output = ();
 
-    fn draw<D>(&self, target: &mut D) -> Result<Self::Output, D::Error>
+    async fn draw<D>(&self, target: &mut D) -> Result<Self::Output, D::Error>
     where
         D: DrawTarget<Color = C>,
     {
-        target.draw_iter(core::iter::once(*self))
+        target.draw_iter(core::iter::once(*self)).await
     }
 }
 
 #[cfg(test)]
 mod tests {
+    use crate::test_support::FutureExt as _;
     // NOTE: `crate` cannot be used here due to circular dependency resolution behavior.
     use embedded_graphics::{
         geometry::Point, mock_display::MockDisplay, pixelcolor::BinaryColor, Drawable, Pixel,
@@ -170,12 +180,15 @@ mod tests {
         let mut display = MockDisplay::new();
         Pixel(Point::new(0, 0), BinaryColor::On)
             .draw(&mut display)
+            .ready()
             .unwrap();
         Pixel(Point::new(2, 1), BinaryColor::On)
             .draw(&mut display)
+            .ready()
             .unwrap();
         Pixel(Point::new(1, 2), BinaryColor::On)
             .draw(&mut display)
+            .ready()
             .unwrap();
 
         display.assert_pattern(&[

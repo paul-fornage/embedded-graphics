@@ -163,7 +163,7 @@ impl<C: PixelColor> StyledDrawable<PrimitiveStyle<C>> for Sector {
     type Color = C;
     type Output = ();
 
-    fn draw_styled<D>(
+    async fn draw_styled<D>(
         &self,
         style: &PrimitiveStyle<C>,
         target: &mut D,
@@ -171,7 +171,9 @@ impl<C: PixelColor> StyledDrawable<PrimitiveStyle<C>> for Sector {
     where
         D: DrawTarget<Color = C>,
     {
-        target.draw_iter(StyledPixelsIterator::new(self, style))
+        target
+            .draw_iter(StyledPixelsIterator::new(self, style))
+            .await
     }
 }
 
@@ -194,6 +196,7 @@ enum BevelKind {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::test_support::FutureExt as _;
     use crate::{
         geometry::{AngleUnit, Point},
         mock_display::MockDisplay,
@@ -212,6 +215,7 @@ mod tests {
         Sector::new(Point::zero(), 9, 210.0.deg(), 120.0.deg())
             .into_styled(PrimitiveStyle::with_stroke(BinaryColor::On, 1))
             .draw(&mut display)
+            .ready()
             .unwrap();
 
         display.assert_pattern(&[
@@ -233,6 +237,7 @@ mod tests {
         Sector::new(Point::zero(), 7, -30.0.deg(), -300.0.deg())
             .into_styled(PrimitiveStyle::with_fill(BinaryColor::On))
             .draw(&mut display)
+            .ready()
             .unwrap();
 
         display.assert_pattern(&[
@@ -271,6 +276,7 @@ mod tests {
         Sector::with_center(Point::new(3, 10), diameter, 0.0.deg(), -90.0.deg())
             .into_styled(style)
             .draw(&mut display)
+            .ready()
             .unwrap();
 
         display.assert_pattern(expected_pattern);
@@ -391,6 +397,7 @@ mod tests {
                     .build(),
             )
             .draw(&mut display)
+            .ready()
             .unwrap();
 
         display.assert_pattern(&[
@@ -421,6 +428,7 @@ mod tests {
                     .build(),
             )
             .draw(&mut display)
+            .ready()
             .unwrap();
 
         display.assert_pattern(&[
@@ -447,6 +455,7 @@ mod tests {
                     .build(),
             )
             .draw(&mut display)
+            .ready()
             .unwrap();
 
         display.assert_pattern(&[
@@ -487,6 +496,7 @@ mod tests {
                     .build(),
             )
             .draw(&mut display)
+            .ready()
             .unwrap();
 
         display.assert_pattern(&[
@@ -534,6 +544,7 @@ mod tests {
                     .build(),
             )
             .draw(&mut display)
+            .ready()
             .unwrap();
 
         display.assert_pattern(&[
@@ -565,6 +576,7 @@ mod tests {
                     .build(),
             )
             .draw(&mut display)
+            .ready()
             .unwrap();
 
         display.assert_pattern(&[
@@ -602,6 +614,7 @@ mod tests {
                     .build(),
             )
             .draw(&mut display)
+            .ready()
             .unwrap();
 
         display.assert_pattern(&[
@@ -647,13 +660,18 @@ mod tests {
         let circle = Circle::new(Point::new_equal(1), 11);
 
         let mut expected = MockDisplay::new();
-        circle.into_styled(style).draw(&mut expected).unwrap();
+        circle
+            .into_styled(style)
+            .draw(&mut expected)
+            .ready()
+            .unwrap();
 
         let mut display = MockDisplay::new();
 
         Sector::new(Point::new_equal(1), 11, 0.0.deg(), 360.0.deg())
             .into_styled(style)
             .draw(&mut display)
+            .ready()
             .unwrap();
 
         display.assert_eq(&expected);
@@ -671,13 +689,18 @@ mod tests {
         let circle = Circle::new(Point::new_equal(1), 11);
 
         let mut expected = MockDisplay::new();
-        circle.into_styled(style).draw(&mut expected).unwrap();
+        circle
+            .into_styled(style)
+            .draw(&mut expected)
+            .ready()
+            .unwrap();
 
         let mut display = MockDisplay::new();
 
         Sector::from_circle(circle, 90.0.deg(), -472.0.deg())
             .into_styled(style)
             .draw(&mut display)
+            .ready()
             .unwrap();
 
         display.assert_eq(&expected);
@@ -693,6 +716,7 @@ mod tests {
         Sector::new(Point::new(-15, 0), 31, 360.0.deg(), 90.0.deg())
             .into_styled(PrimitiveStyle::with_fill(BinaryColor::On))
             .draw(&mut display)
+            .ready()
             .unwrap();
     }
 }

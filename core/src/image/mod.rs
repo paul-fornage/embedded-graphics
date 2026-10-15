@@ -22,6 +22,7 @@ use crate::{
 ///
 /// [`Image`]: https://docs.rs/embedded-graphics/latest/embedded_graphics/image/struct.Image.html
 /// [`OriginDimensions`]: crate::geometry::OriginDimensions
+#[allow(async_fn_in_trait)] // Futures may stay on the local embedded executor.
 pub trait ImageDrawable: OriginDimensions {
     /// The color type.
     type Color: PixelColor;
@@ -38,7 +39,7 @@ pub trait ImageDrawable: OriginDimensions {
     ///
     /// [`Image`]: https://docs.rs/embedded-graphics/latest/embedded_graphics/image/struct.Image.html
     /// [`OriginDimensions`]: crate::geometry::OriginDimensions
-    fn draw<D>(&self, target: &mut D) -> Result<(), D::Error>
+    async fn draw<D>(&self, target: &mut D) -> Result<(), D::Error>
     where
         D: DrawTarget<Color = Self::Color>;
 
@@ -53,7 +54,7 @@ pub trait ImageDrawable: OriginDimensions {
     ///
     /// [`SubImage`]: https://docs.rs/embedded-graphics/latest/embedded_graphics/image/struct.SubImage.html
     /// [`Rectangle`]: crate::primitives::rectangle::Rectangle
-    fn draw_sub_image<D>(&self, target: &mut D, area: &Rectangle) -> Result<(), D::Error>
+    async fn draw_sub_image<D>(&self, target: &mut D, area: &Rectangle) -> Result<(), D::Error>
     where
         D: DrawTarget<Color = Self::Color>;
 }

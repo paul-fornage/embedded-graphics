@@ -50,26 +50,27 @@ where
 {
     type Color = T::Color;
 
-    fn draw<DT>(&self, target: &mut DT) -> Result<(), DT::Error>
+    async fn draw<DT>(&self, target: &mut DT) -> Result<(), DT::Error>
     where
         DT: DrawTarget<Color = Self::Color>,
     {
-        self.parent.draw_sub_image(target, &self.area)
+        self.parent.draw_sub_image(target, &self.area).await
     }
 
-    fn draw_sub_image<DT>(&self, target: &mut DT, area: &Rectangle) -> Result<(), DT::Error>
+    async fn draw_sub_image<DT>(&self, target: &mut DT, area: &Rectangle) -> Result<(), DT::Error>
     where
         DT: DrawTarget<Color = Self::Color>,
     {
         let area = area.translate(self.area.top_left);
 
-        self.parent.draw_sub_image(target, &area)
+        self.parent.draw_sub_image(target, &area).await
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::test_support::FutureExt as _;
     use crate::{
         geometry::{Point, Size},
         image::ImageDrawableExt,
@@ -84,14 +85,18 @@ mod tests {
     impl ImageDrawable for MockImageDrawable {
         type Color = BinaryColor;
 
-        fn draw<DT>(&self, _target: &mut DT) -> Result<(), DT::Error>
+        async fn draw<DT>(&self, _target: &mut DT) -> Result<(), DT::Error>
         where
             DT: DrawTarget<Color = BinaryColor>,
         {
             panic!("draw shouldn't have been called on MockImageDrawable")
         }
 
-        fn draw_sub_image<DT>(&self, _target: &mut DT, area: &Rectangle) -> Result<(), DT::Error>
+        async fn draw_sub_image<DT>(
+            &self,
+            _target: &mut DT,
+            area: &Rectangle,
+        ) -> Result<(), DT::Error>
         where
             DT: DrawTarget<Color = BinaryColor>,
         {
@@ -116,7 +121,7 @@ mod tests {
         };
 
         let mut display = MockDisplay::new();
-        image.sub_image(&area).draw(&mut display).unwrap();
+        image.sub_image(&area).draw(&mut display).ready().unwrap();
     }
 
     #[test]
@@ -128,7 +133,7 @@ mod tests {
         };
 
         let mut display = MockDisplay::new();
-        image.sub_image(&area).draw(&mut display).unwrap();
+        image.sub_image(&area).draw(&mut display).ready().unwrap();
     }
 
     #[test]
@@ -145,6 +150,7 @@ mod tests {
             .sub_image(&area1)
             .sub_image(&area2)
             .draw(&mut display)
+            .ready()
             .unwrap();
     }
 
@@ -162,6 +168,7 @@ mod tests {
             .sub_image(&area1)
             .sub_image(&area2)
             .draw(&mut display)
+            .ready()
             .unwrap();
     }
 }

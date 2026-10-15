@@ -26,6 +26,7 @@ pub use styled::StyledPixelsIterator;
 /// ## Create some triangles with different styles
 ///
 /// ```rust
+/// # let _ = async {
 /// use embedded_graphics::{
 ///     pixelcolor::Rgb565, prelude::*, primitives::{Triangle, PrimitiveStyle},
 /// };
@@ -36,14 +37,15 @@ pub use styled::StyledPixelsIterator;
 /// // Triangle with red 1 px wide stroke
 /// Triangle::new(Point::new(40, 20), Point::new(50, 25), Point::new(60, 60))
 ///     .into_styled(PrimitiveStyle::with_stroke(Rgb565::RED, 1))
-///     .draw(&mut display)?;
+///     .draw(&mut display).await?;
 ///
 /// // Triangle with translation applied
 /// Triangle::new(Point::new(40, 20), Point::new(50, 25), Point::new(60, 60))
 ///     .translate(Point::new(-10, -20))
 ///     .into_styled(PrimitiveStyle::with_stroke(Rgb565::GREEN, 1))
-///     .draw(&mut display)?;
+///     .draw(&mut display).await?;
 /// # Ok::<(), core::convert::Infallible>(())
+/// # };
 /// ```
 ///
 /// ## Create a triangle from a slice

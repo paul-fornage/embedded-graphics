@@ -117,19 +117,21 @@
 //! This example sets three pixels on the display and checks that they're turned on.
 //!
 //! ```rust
+//! # let _ = async {
 //! use embedded_graphics::{mock_display::MockDisplay, pixelcolor::BinaryColor, prelude::*};
 //!
 //! let mut display = MockDisplay::new();
 //!
-//! Pixel(Point::new(0, 0), BinaryColor::On).draw(&mut display);
-//! Pixel(Point::new(2, 1), BinaryColor::On).draw(&mut display);
-//! Pixel(Point::new(1, 2), BinaryColor::On).draw(&mut display);
+//! Pixel(Point::new(0, 0), BinaryColor::On).draw(&mut display).await;
+//! Pixel(Point::new(2, 1), BinaryColor::On).draw(&mut display).await;
+//! Pixel(Point::new(1, 2), BinaryColor::On).draw(&mut display).await;
 //!
 //! display.assert_pattern(&[
 //!     "#  ", //
 //!     "  #", //
 //!     " # ", //
 //! ]);
+//! # };
 //! ```
 //!
 //! ## Load and validate a 16BPP image
@@ -140,6 +142,7 @@
 //! ![Test image, scaled 1000%](data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACgAAAAUCAIAAABwJOjsAAAAMUlEQVRIx2NkwAv+45Vl/E++XiaGAQKjFo9aPGrx0LeYhVAJMxrUoxaPWjxq8aCzGAAVwwQnmlfSgwAAAABJRU5ErkJggg==)
 //!
 //! ```rust
+//! # let _ = async {
 //! use embedded_graphics::{
 //!     image::{Image, ImageRaw, ImageRawBE},
 //!     mock_display::MockDisplay,
@@ -158,12 +161,13 @@
 //!
 //! let mut display: MockDisplay<Rgb565> = MockDisplay::new();
 //!
-//! image.draw(&mut display);
+//! image.draw(&mut display).await;
 //!
 //! display.assert_pattern(&[
 //!     "KRGY", //
 //!     "BCMW", //
 //! ]);
+//! # };
 //! ```
 //!
 //! [`pixelcolor`]: super::pixelcolor#structs
@@ -701,7 +705,7 @@ where
     type Color = C;
     type Error = core::convert::Infallible;
 
-    fn draw_iter<I>(&mut self, pixels: I) -> Result<(), Self::Error>
+    async fn draw_iter<I>(&mut self, pixels: I) -> Result<(), Self::Error>
     where
         I: IntoIterator<Item = Pixel<Self::Color>>,
     {
@@ -739,6 +743,7 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::test_support::FutureExt as _;
     use crate::{
         pixelcolor::{BinaryColor, Rgb565},
         Drawable,
@@ -751,6 +756,7 @@ mod tests {
 
         Pixel(Point::new(65, 0), BinaryColor::On)
             .draw(&mut display)
+            .ready()
             .unwrap();
     }
 
@@ -761,6 +767,7 @@ mod tests {
 
         Pixel(Point::new(65, 0), BinaryColor::On)
             .draw(&mut display)
+            .ready()
             .unwrap();
     }
 
@@ -770,8 +777,8 @@ mod tests {
         let mut display = MockDisplay::new();
 
         let p = Pixel(Point::new(1, 2), BinaryColor::On);
-        p.draw(&mut display).unwrap();
-        p.draw(&mut display).unwrap();
+        p.draw(&mut display).ready().unwrap();
+        p.draw(&mut display).ready().unwrap();
     }
 
     #[test]
@@ -780,8 +787,8 @@ mod tests {
         display.set_allow_overdraw(true);
 
         let p = Pixel(Point::new(1, 2), BinaryColor::On);
-        p.draw(&mut display).unwrap();
-        p.draw(&mut display).unwrap();
+        p.draw(&mut display).ready().unwrap();
+        p.draw(&mut display).ready().unwrap();
     }
 
     #[test]

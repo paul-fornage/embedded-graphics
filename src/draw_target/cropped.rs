@@ -41,22 +41,26 @@ where
     type Color = T::Color;
     type Error = T::Error;
 
-    fn draw_iter<I>(&mut self, pixels: I) -> Result<(), Self::Error>
+    async fn draw_iter<I>(&mut self, pixels: I) -> Result<(), Self::Error>
     where
         I: IntoIterator<Item = Pixel<Self::Color>>,
     {
-        self.parent.draw_iter(pixels)
+        self.parent.draw_iter(pixels).await
     }
 
-    fn fill_contiguous<I>(&mut self, area: &Rectangle, colors: I) -> Result<(), Self::Error>
+    async fn fill_contiguous<I>(&mut self, area: &Rectangle, colors: I) -> Result<(), Self::Error>
     where
         I: IntoIterator<Item = Self::Color>,
     {
-        self.parent.fill_contiguous(area, colors)
+        self.parent.fill_contiguous(area, colors).await
     }
 
-    fn fill_solid(&mut self, area: &Rectangle, color: Self::Color) -> Result<(), Self::Error> {
-        self.parent.fill_solid(area, color)
+    async fn fill_solid(
+        &mut self,
+        area: &Rectangle,
+        color: Self::Color,
+    ) -> Result<(), Self::Error> {
+        self.parent.fill_solid(area, color).await
     }
 }
 
@@ -71,6 +75,7 @@ where
 
 #[cfg(test)]
 mod tests {
+    use crate::test_support::FutureExt as _;
     use crate::{
         draw_target::{DrawTarget, DrawTargetExt},
         geometry::Dimensions,
@@ -92,7 +97,7 @@ mod tests {
             Pixel(Point::new(0, 0), BinaryColor::On),
             Pixel(Point::new(1, 2), BinaryColor::Off),
         ];
-        cropped.draw_iter(pixels.iter().copied()).unwrap();
+        cropped.draw_iter(pixels.iter().copied()).ready().unwrap();
 
         display.assert_pattern(&[
             "    ", //
@@ -120,6 +125,7 @@ mod tests {
         let area = Rectangle::new(Point::new(1, 2), Size::new(5, 4));
         cropped
             .fill_contiguous(&area, colors.iter().map(|c| BinaryColor::from(*c != 0)))
+            .ready()
             .unwrap();
 
         display.assert_pattern(&[
@@ -142,7 +148,7 @@ mod tests {
         let mut cropped = display.cropped(&area);
 
         let area = Rectangle::new(Point::new(2, 1), Size::new(3, 4));
-        cropped.fill_solid(&area, BinaryColor::On).unwrap();
+        cropped.fill_solid(&area, BinaryColor::On).ready().unwrap();
 
         display.assert_pattern(&[
             "      ", //
@@ -162,11 +168,12 @@ mod tests {
 
         let area = Rectangle::new(Point::new(1, 3), Size::new(3, 4));
         let mut cropped = display.cropped(&area);
-        cropped.clear(BinaryColor::On).unwrap();
+        cropped.clear(BinaryColor::On).ready().unwrap();
 
         let mut expected = MockDisplay::new();
         area.into_styled(PrimitiveStyle::with_fill(BinaryColor::On))
             .draw(&mut expected)
+            .ready()
             .unwrap();
 
         display.assert_eq(&expected);

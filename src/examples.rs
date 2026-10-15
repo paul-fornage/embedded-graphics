@@ -16,9 +16,11 @@
 //! <div style="clear: both;"></div>
 //!
 //! ```ignore
+//! # let _ = async {
 //! use embedded_graphics::{pixelcolor::Rgb888, prelude::*};
 //!
-//! Pixel(Point::new(32, 32), Rgb888::GREEN).draw(&mut display)?;
+//! Pixel(Point::new(32, 32), Rgb888::GREEN).draw(&mut display).await?;
+//! # };
 //! ```
 //! ## Draw a line
 //!
@@ -29,6 +31,7 @@
 //! <div style="clear: both;"></div>
 //!
 //! ```ignore
+//! # let _ = async {
 //! use embedded_graphics::{
 //!     pixelcolor::Rgb888,
 //!     prelude::*,
@@ -37,7 +40,8 @@
 //!
 //! Line::new(Point::new(16, 24), Point::new(51, 34))
 //!     .into_styled(PrimitiveStyle::with_stroke(Rgb888::RED, 8))
-//!     .draw(&mut display)?;
+//!     .draw(&mut display).await?;
+//! # };
 //! ```
 //! ## Draw a rectangle
 //!
@@ -48,6 +52,7 @@
 //! <div style="clear: both;"></div>
 //!
 //! ```ignore
+//! # let _ = async {
 //! use embedded_graphics::{
 //!     pixelcolor::Rgb888,
 //!     prelude::*,
@@ -62,7 +67,8 @@
 //!             .fill_color(Rgb888::CYAN)
 //!             .build(),
 //!     )
-//!     .draw(&mut display)?;
+//!     .draw(&mut display).await?;
+//! # };
 //! ```
 //! ## Draw a circle
 //!
@@ -73,6 +79,7 @@
 //! <div style="clear: both;"></div>
 //!
 //! ```ignore
+//! # let _ = async {
 //! use embedded_graphics::{
 //!     pixelcolor::Rgb888,
 //!     prelude::*,
@@ -81,7 +88,8 @@
 //!
 //! Circle::new(Point::new(16, 16), 40)
 //!     .into_styled(PrimitiveStyle::with_fill(Rgb888::BLUE))
-//!     .draw(&mut display)?;
+//!     .draw(&mut display).await?;
+//! # };
 //! ```
 //! ## Draw an ellipse
 //!
@@ -92,6 +100,7 @@
 //! <div style="clear: both;"></div>
 //!
 //! ```ignore
+//! # let _ = async {
 //! use embedded_graphics::{
 //!     pixelcolor::Rgb888,
 //!     prelude::*,
@@ -100,7 +109,8 @@
 //!
 //! Ellipse::new(Point::new(8, 16), Size::new(48, 32))
 //!     .into_styled(PrimitiveStyle::with_stroke(Rgb888::GREEN, 2))
-//!     .draw(&mut display)?;
+//!     .draw(&mut display).await?;
+//! # };
 //! ```
 //! ## Draw an arc
 //!
@@ -111,6 +121,7 @@
 //! <div style="clear: both;"></div>
 //!
 //! ```ignore
+//! # let _ = async {
 //! use embedded_graphics::{
 //!     pixelcolor::Rgb888,
 //!     prelude::*,
@@ -119,7 +130,8 @@
 //!
 //! Arc::new(Point::new(12, 12), 40, -30.0.deg(), 150.0.deg())
 //!     .into_styled(PrimitiveStyle::with_stroke(Rgb888::GREEN, 2))
-//!     .draw(&mut display)?;
+//!     .draw(&mut display).await?;
+//! # };
 //! ```
 //! ## Draw a sector
 //!
@@ -130,6 +142,7 @@
 //! <div style="clear: both;"></div>
 //!
 //! ```ignore
+//! # let _ = async {
 //! use embedded_graphics::{
 //!     pixelcolor::Rgb888,
 //!     prelude::*,
@@ -138,7 +151,8 @@
 //!
 //! Sector::new(Point::new(12, 12), 40, -30.0.deg(), 150.0.deg())
 //!     .into_styled(PrimitiveStyle::with_fill(Rgb888::BLUE))
-//!     .draw(&mut display)?;
+//!     .draw(&mut display).await?;
+//! # };
 //! ```
 //! ## Draw a triangle
 //!
@@ -149,6 +163,7 @@
 //! <div style="clear: both;"></div>
 //!
 //! ```ignore
+//! # let _ = async {
 //! use embedded_graphics::{
 //!     pixelcolor::Rgb888,
 //!     prelude::*,
@@ -157,7 +172,8 @@
 //!
 //! Triangle::new(Point::new(32, 16), Point::new(16, 48), Point::new(48, 48))
 //!     .into_styled(PrimitiveStyle::with_stroke(Rgb888::MAGENTA, 1))
-//!     .draw(&mut display)?;
+//!     .draw(&mut display).await?;
+//! # };
 //! ```
 //! ## Draw a polyline
 //!
@@ -168,6 +184,7 @@
 //! <div style="clear: both;"></div>
 //!
 //! ```ignore
+//! # let _ = async {
 //! use embedded_graphics::{
 //!     pixelcolor::Rgb888,
 //!     prelude::*,
@@ -184,7 +201,8 @@
 //!
 //! Polyline::new(&points)
 //!     .into_styled(PrimitiveStyle::with_stroke(Rgb888::CYAN, 1))
-//!     .draw(&mut display)?;
+//!     .draw(&mut display).await?;
+//! # };
 //! ```
 //! ## Draw a rectangle with rounded corners
 //!
@@ -195,6 +213,7 @@
 //! <div style="clear: both;"></div>
 //!
 //! ```ignore
+//! # let _ = async {
 //! use embedded_graphics::{
 //!     pixelcolor::Rgb888,
 //!     prelude::*,
@@ -212,7 +231,8 @@
 //!     Size::new(10, 10),
 //! )
 //! .into_styled(style)
-//! .draw(&mut display)?;
+//! .draw(&mut display).await?;
+//! # };
 //! ```
 //! ## Draw some text
 //!
@@ -223,6 +243,7 @@
 //! <div style="clear: both;"></div>
 //!
 //! ```ignore
+//! # let _ = async {
 //! use embedded_graphics::{
 //!     mono_font::{ascii::FONT_6X10, MonoTextStyle},
 //!     pixelcolor::Rgb888,
@@ -232,7 +253,8 @@
 //!
 //! let style = MonoTextStyle::new(&FONT_6X10, Rgb888::GREEN);
 //!
-//! Text::new("Hello,\nRust!", Point::new(2, 28), style).draw(&mut display)?;
+//! Text::new("Hello,\nRust!", Point::new(2, 28), style).draw(&mut display).await?;
+//! # };
 //! ```
 //! ## Display a TGA image
 //!
@@ -243,6 +265,7 @@
 //! <div style="clear: both;"></div>
 //!
 //! ```ignore
+//! # let _ = async {
 //! use embedded_graphics::{image::Image, pixelcolor::Rgb888, prelude::*};
 //! use tinytga::Tga;
 //!
@@ -252,5 +275,6 @@
 //! let image = Image::new(&tga, Point::zero());
 //!
 //! // Display the image
-//! image.draw(&mut display)?;
+//! image.draw(&mut display).await?;
+//! # };
 //! ```

@@ -23,6 +23,7 @@
 //!
 //! # Implementation example
 //! ```
+//! # let _ = async {
 //! use embedded_graphics::pixelcolor::{Gray8, ColorBlend};
 //! use embedded_graphics::image::{Image, ImageRaw};
 //! use embedded_graphics::prelude::*;
@@ -80,7 +81,7 @@
 //!     type Color = TransparentGray;
 //!     type Error = core::convert::Infallible;
 //!
-//!     fn draw_iter<I>(&mut self, pixels: I) -> Result<(), core::convert::Infallible>
+//!     async fn draw_iter<I>(&mut self, pixels: I) -> Result<(), core::convert::Infallible>
 //!     where
 //!         I: IntoIterator<Item = Pixel<Self::Color>>,
 //!     {
@@ -117,7 +118,8 @@
 //!
 //! // Draw a non-transparent object on a transparent handling display
 //! // Conversion is automatically handled by the `From` trait above and the `DrawTargetExt` trait
-//! image.draw(&mut display.color_converted()).unwrap();
+//! image.draw(&mut display.color_converted()).await.unwrap();
+//! # };
 //! ```
 
 use crate::pixelcolor::PixelColor;

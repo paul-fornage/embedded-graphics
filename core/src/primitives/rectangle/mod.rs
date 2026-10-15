@@ -20,6 +20,7 @@ pub use points::Points;
 /// ## Create some rectangles with different styles
 ///
 /// ```rust
+/// # let _ = async {
 /// use embedded_graphics::{
 ///     pixelcolor::Rgb565, prelude::*, primitives::{Rectangle, PrimitiveStyleBuilder},
 /// };
@@ -36,14 +37,15 @@ pub use points::Points;
 ///
 /// Rectangle::new(Point::new(30, 20), Size::new(10, 15))
 ///     .into_styled(style)
-///     .draw(&mut display)?;
+///     .draw(&mut display).await?;
 ///
 /// // Rectangle with translation applied
 /// Rectangle::new(Point::new(30, 20), Size::new(10, 15))
 ///     .translate(Point::new(-20, -10))
 ///     .into_styled(style)
-///     .draw(&mut display)?;
+///     .draw(&mut display).await?;
 /// # Ok::<(), core::convert::Infallible>(())
+/// # };
 /// ```
 #[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Default)]
 #[cfg_attr(feature = "defmt", derive(::defmt::Format))]
@@ -162,6 +164,7 @@ impl Rectangle {
     /// their intersection shown with `#` characters.
     ///
     /// ```rust
+    /// # let _ = async {
     /// use embedded_graphics::{
     ///     mock_display::MockDisplay, pixelcolor::BinaryColor, prelude::*,
     ///     primitives::{Rectangle, PrimitiveStyle},
@@ -177,15 +180,15 @@ impl Rectangle {
     ///
     /// rect1
     ///     .into_styled(PrimitiveStyle::with_stroke(BinaryColor::Off, 1))
-    ///     .draw(&mut display)?;
+    ///     .draw(&mut display).await?;
     ///
     /// rect2
     ///     .into_styled(PrimitiveStyle::with_stroke(BinaryColor::Off, 1))
-    ///     .draw(&mut display)?;
+    ///     .draw(&mut display).await?;
     ///
     /// intersection
     ///     .into_styled(PrimitiveStyle::with_stroke(BinaryColor::On, 1))
-    ///     .draw(&mut display)?;
+    ///     .draw(&mut display).await?;
     ///
     /// display.assert_pattern(&[
     ///     ".......     ",
@@ -200,6 +203,7 @@ impl Rectangle {
     ///     "  ..........",
     /// ]);
     /// # Ok::<(), core::convert::Infallible>(())
+    /// # };
     /// ```
     ///
     /// ## No intersection
@@ -267,6 +271,7 @@ impl Rectangle {
     /// their enveloping rectangle shown with `#` characters.
     ///
     /// ```rust
+    /// # let _ = async {
     /// use embedded_graphics::{
     ///     mock_display::MockDisplay, pixelcolor::BinaryColor, prelude::*,
     ///     primitives::{Rectangle, PrimitiveStyle},
@@ -282,15 +287,15 @@ impl Rectangle {
     ///
     /// rect1
     ///     .into_styled(PrimitiveStyle::with_stroke(BinaryColor::Off, 1))
-    ///     .draw(&mut display)?;
+    ///     .draw(&mut display).await?;
     ///
     /// rect2
     ///     .into_styled(PrimitiveStyle::with_stroke(BinaryColor::Off, 1))
-    ///     .draw(&mut display)?;
+    ///     .draw(&mut display).await?;
     ///
     /// envelope
     ///     .into_styled(PrimitiveStyle::with_stroke(BinaryColor::On, 1))
-    ///     .draw(&mut display)?;
+    ///     .draw(&mut display).await?;
     ///
     /// display.assert_pattern(&[
     ///     "############",
@@ -305,6 +310,7 @@ impl Rectangle {
     ///     "############",
     /// ]);
     /// # Ok::<(), core::convert::Infallible>(())
+    /// # };
     /// ```
     pub fn envelope(&self, other: &Rectangle) -> Rectangle {
         let top_left = self.top_left.component_min(other.top_left);

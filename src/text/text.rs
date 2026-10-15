@@ -154,19 +154,17 @@ impl<S: TextRenderer> Drawable for Text<'_, S> {
     type Color = S::Color;
     type Output = Point;
 
-    fn draw<D>(&self, target: &mut D) -> Result<Point, D::Error>
+    async fn draw<D>(&self, target: &mut D) -> Result<Point, D::Error>
     where
         D: DrawTarget<Color = Self::Color>,
     {
         let mut next_position = self.position;
 
         for (line, position) in self.lines() {
-            next_position = self.character_style.draw_string(
-                line,
-                position,
-                self.text_style.baseline,
-                target,
-            )?;
+            next_position = self
+                .character_style
+                .draw_string(line, position, self.text_style.baseline, target)
+                .await?;
         }
 
         Ok(next_position)
@@ -208,6 +206,7 @@ impl<S: TextRenderer> Dimensions for Text<'_, S> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::test_support::FutureExt as _;
     use crate::{
         geometry::Size,
         mock_display::MockDisplay,
@@ -327,14 +326,17 @@ mod tests {
         let mut single_text_display = MockDisplay::new();
         Text::with_baseline("AB\nC", Point::zero(), character_style, Baseline::Top)
             .draw(&mut single_text_display)
+            .ready()
             .unwrap();
 
         let mut multiple_text_display = MockDisplay::new();
         let pos = Text::with_baseline("AB\n", Point::zero(), character_style, Baseline::Top)
             .draw(&mut multiple_text_display)
+            .ready()
             .unwrap();
         Text::with_baseline("C", pos, character_style, Baseline::Top)
             .draw(&mut multiple_text_display)
+            .ready()
             .unwrap();
 
         assert_eq!(single_text_display, multiple_text_display);
@@ -350,11 +352,13 @@ mod tests {
         let mut cr_lf_display = MockDisplay::new();
         Text::with_baseline("AB\r\nC", Point::zero(), character_style, Baseline::Top)
             .draw(&mut cr_lf_display)
+            .ready()
             .unwrap();
 
         let mut lf_display = MockDisplay::new();
         Text::with_baseline("AB\nC", Point::zero(), character_style, Baseline::Top)
             .draw(&mut lf_display)
+            .ready()
             .unwrap();
 
         assert_eq!(cr_lf_display, lf_display);
@@ -389,6 +393,7 @@ mod tests {
             .build();
         Text::new("Mm", Point::new(0, 7), style_inverse)
             .draw(&mut display_inverse)
+            .ready()
             .unwrap();
 
         let mut display_normal = MockDisplay::new();
@@ -399,6 +404,7 @@ mod tests {
             .build();
         Text::new("Mm", Point::new(0, 7), style_normal)
             .draw(&mut display_normal)
+            .ready()
             .unwrap();
 
         display_inverse.assert_eq(&display_normal.map(|c| c.invert()));
@@ -413,6 +419,7 @@ mod tests {
             MonoTextStyle::new(&FONT_6X9, BinaryColor::On),
         )
         .draw(&mut display)
+        .ready()
         .unwrap();
 
         display.assert_eq(&MockDisplay::new());
@@ -432,10 +439,12 @@ mod tests {
         Rectangle::new(Point::zero(), Size::new(6, 8))
             .into_styled(PrimitiveStyle::with_fill(BinaryColor::Off))
             .draw(&mut display)
+            .ready()
             .unwrap();
 
         Text::with_baseline("AA", Point::zero(), character_style, Baseline::Top)
             .draw(&mut display)
+            .ready()
             .unwrap();
 
         display.assert_pattern(&[
@@ -482,6 +491,7 @@ mod tests {
         let mut display = MockDisplay::new();
         Text::with_text_style("A\nBC", Point::new(0, 0), character_style, text_style)
             .draw(&mut display)
+            .ready()
             .unwrap();
 
         display.assert_pattern(&[
@@ -520,6 +530,7 @@ mod tests {
         let mut display = MockDisplay::new();
         Text::with_text_style("A\nBC", Point::new(5, 0), character_style, text_style)
             .draw(&mut display)
+            .ready()
             .unwrap();
 
         display.assert_pattern(&[
@@ -558,6 +569,7 @@ mod tests {
         let mut display = MockDisplay::new();
         Text::with_text_style("A\nBC", Point::new(11, 0), character_style, text_style)
             .draw(&mut display)
+            .ready()
             .unwrap();
 
         display.assert_pattern(&[
@@ -592,12 +604,15 @@ mod tests {
 
         Text::with_baseline("t", Point::new(0, 8), character_style, Baseline::Top)
             .draw(&mut display)
+            .ready()
             .unwrap();
         Text::with_baseline("m", Point::new(6, 8), character_style, Baseline::Middle)
             .draw(&mut display)
+            .ready()
             .unwrap();
         Text::with_baseline("b", Point::new(12, 8), character_style, Baseline::Bottom)
             .draw(&mut display)
+            .ready()
             .unwrap();
         Text::with_baseline(
             "B",
@@ -606,6 +621,7 @@ mod tests {
             Baseline::Alphabetic,
         )
         .draw(&mut display)
+        .ready()
         .unwrap();
 
         display.assert_pattern(&[
@@ -655,7 +671,7 @@ mod tests {
                 );
 
                 let mut display = MockDisplay::new();
-                text.draw(&mut display).unwrap();
+                text.draw(&mut display).ready().unwrap();
 
                 assert_eq!(
                     display.affected_area(),
@@ -681,9 +697,11 @@ mod tests {
         let mut display = MockDisplay::new();
         let next = Text::new("AB", Point::new(0, 8), character_style1)
             .draw(&mut display)
+            .ready()
             .unwrap();
         Text::new("C", next, character_style2)
             .draw(&mut display)
+            .ready()
             .unwrap();
 
         display.assert_pattern(&[
@@ -713,6 +731,7 @@ mod tests {
         let mut display = MockDisplay::new();
         Text::with_text_style("A\nB", Point::new(0, 5), character_style, text_style)
             .draw(&mut display)
+            .ready()
             .unwrap();
 
         display.assert_pattern(&[
@@ -747,6 +766,7 @@ mod tests {
         let mut display = MockDisplay::new();
         Text::with_text_style("A\nBC", Point::zero(), character_style, text_style)
             .draw(&mut display)
+            .ready()
             .unwrap();
 
         display.assert_pattern(&[

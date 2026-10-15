@@ -40,28 +40,34 @@ where
     type Color = C;
     type Error = T::Error;
 
-    fn draw_iter<I>(&mut self, pixels: I) -> Result<(), Self::Error>
+    async fn draw_iter<I>(&mut self, pixels: I) -> Result<(), Self::Error>
     where
         I: IntoIterator<Item = Pixel<Self::Color>>,
     {
         self.parent
             .draw_iter(pixels.into_iter().map(|Pixel(p, c)| Pixel(p, c.into())))
+            .await
     }
 
-    fn fill_contiguous<I>(&mut self, area: &Rectangle, colors: I) -> Result<(), Self::Error>
+    async fn fill_contiguous<I>(&mut self, area: &Rectangle, colors: I) -> Result<(), Self::Error>
     where
         I: IntoIterator<Item = Self::Color>,
     {
         self.parent
             .fill_contiguous(area, colors.into_iter().map(|c| c.into()))
+            .await
     }
 
-    fn fill_solid(&mut self, area: &Rectangle, color: Self::Color) -> Result<(), Self::Error> {
-        self.parent.fill_solid(area, color.into())
+    async fn fill_solid(
+        &mut self,
+        area: &Rectangle,
+        color: Self::Color,
+    ) -> Result<(), Self::Error> {
+        self.parent.fill_solid(area, color.into()).await
     }
 
-    fn clear(&mut self, color: Self::Color) -> Result<(), Self::Error> {
-        self.parent.clear(color.into())
+    async fn clear(&mut self, color: Self::Color) -> Result<(), Self::Error> {
+        self.parent.clear(color.into()).await
     }
 }
 

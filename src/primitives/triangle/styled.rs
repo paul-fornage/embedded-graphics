@@ -84,7 +84,7 @@ impl<C: PixelColor> StyledDrawable<PrimitiveStyle<C>> for Triangle {
     type Color = C;
     type Output = ();
 
-    fn draw_styled<D>(
+    async fn draw_styled<D>(
         &self,
         style: &PrimitiveStyle<C>,
         target: &mut D,
@@ -112,7 +112,7 @@ impl<C: PixelColor> StyledDrawable<PrimitiveStyle<C>> for Triangle {
                 let rect = line.to_rectangle();
 
                 if !rect.is_zero_sized() {
-                    target.fill_solid(&rect, color)?;
+                    target.fill_solid(&rect, color).await?;
                 }
             }
         }
@@ -154,6 +154,7 @@ impl<C: PixelColor> StyledDimensions<PrimitiveStyle<C>> for Triangle {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::test_support::FutureExt as _;
     use crate::{
         geometry::{Point, Size},
         mock_display::MockDisplay,
@@ -180,6 +181,7 @@ mod tests {
         Triangle::new(Point::new(10, 10), Point::new(20, 30), Point::new(30, -10))
             .into_styled(PrimitiveStyle::with_fill(BinaryColor::On))
             .draw(&mut display)
+            .ready()
             .unwrap();
     }
 
@@ -190,6 +192,7 @@ mod tests {
         Triangle::new(Point::new(2, 2), Point::new(2, 4), Point::new(4, 2))
             .into_styled(PrimitiveStyle::with_fill(BinaryColor::On))
             .draw(&mut display)
+            .ready()
             .unwrap();
 
         display.assert_pattern(&[
@@ -214,6 +217,7 @@ mod tests {
                     .build(),
             )
             .draw(&mut display)
+            .ready()
             .unwrap();
 
         display.assert_pattern(&[
@@ -237,6 +241,7 @@ mod tests {
         Triangle::new(Point::new(5, 5), Point::new(10, 15), Point::new(15, -5))
             .into_styled(PrimitiveStyle::with_fill(BinaryColor::On))
             .draw(&mut display)
+            .ready()
             .unwrap();
 
         display.assert_pattern(&[
@@ -277,7 +282,7 @@ mod tests {
         let styled = triangle.into_styled(PrimitiveStyle::with_stroke(BinaryColor::On, 1));
 
         let mut tri_display: MockDisplay<BinaryColor> = MockDisplay::new();
-        styled.draw(&mut tri_display).unwrap();
+        styled.draw(&mut tri_display).ready().unwrap();
 
         let mut lines_display: MockDisplay<BinaryColor> = MockDisplay::new();
         lines_display.set_allow_overdraw(true);
@@ -287,14 +292,17 @@ mod tests {
         Line::new(p1, p2)
             .into_styled(PrimitiveStyle::with_stroke(BinaryColor::On, 1))
             .draw(&mut lines_display)
+            .ready()
             .unwrap();
         Line::new(p2, p3)
             .into_styled(PrimitiveStyle::with_stroke(BinaryColor::On, 1))
             .draw(&mut lines_display)
+            .ready()
             .unwrap();
         Line::new(p3, p1)
             .into_styled(PrimitiveStyle::with_stroke(BinaryColor::On, 1))
             .draw(&mut lines_display)
+            .ready()
             .unwrap();
 
         tri_display.assert_eq(&lines_display);
@@ -308,7 +316,7 @@ mod tests {
 
         let mut display: MockDisplay<BinaryColor> = MockDisplay::new();
 
-        styled.draw(&mut display).unwrap();
+        styled.draw(&mut display).ready().unwrap();
     }
 
     #[test]
@@ -319,7 +327,7 @@ mod tests {
 
         let mut display = MockDisplay::new();
 
-        styled.draw(&mut display).unwrap();
+        styled.draw(&mut display).ready().unwrap();
         assert_eq!(display.affected_area(), styled.bounding_box());
     }
 
@@ -350,7 +358,7 @@ mod tests {
 
         let mut display = MockDisplay::new();
 
-        styled.draw(&mut display).unwrap();
+        styled.draw(&mut display).ready().unwrap();
 
         // Believe it or not, this is actually a triangle.
         display.assert_pattern(&[
@@ -389,7 +397,7 @@ mod tests {
 
         let mut display = MockDisplay::new();
 
-        styled.draw(&mut display).unwrap();
+        styled.draw(&mut display).ready().unwrap();
     }
 
     #[test]
@@ -409,7 +417,7 @@ mod tests {
 
         let mut display = MockDisplay::new();
 
-        styled.draw(&mut display).unwrap();
+        styled.draw(&mut display).ready().unwrap();
 
         // In the failing case, there are some `G`s sitting on the end of each line that
         // shouldn't be there.
@@ -461,7 +469,7 @@ mod tests {
 
         let mut display = MockDisplay::new();
 
-        styled.draw(&mut display).unwrap();
+        styled.draw(&mut display).ready().unwrap();
 
         display.assert_pattern(&[
             "               R",
@@ -498,7 +506,7 @@ mod tests {
 
         let mut display = MockDisplay::new();
 
-        styled.draw(&mut display).unwrap();
+        styled.draw(&mut display).ready().unwrap();
 
         display.assert_pattern(&[
             "          R  ",
@@ -534,7 +542,7 @@ mod tests {
 
         let mut display = MockDisplay::new();
 
-        styled.draw(&mut display).unwrap();
+        styled.draw(&mut display).ready().unwrap();
 
         display.assert_pattern(&[
             "          R  ",
@@ -574,6 +582,6 @@ mod tests {
         display.set_allow_out_of_bounds_drawing(true);
         display.set_allow_overdraw(true);
 
-        styled.draw(&mut display).unwrap();
+        styled.draw(&mut display).ready().unwrap();
     }
 }

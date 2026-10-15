@@ -47,6 +47,7 @@ pub use styled::StyledPixelsIterator;
 /// radius. The rectangle is drawn using a solid green fill with a 5px red stroke.
 ///
 /// ```rust
+/// # let _ = async {
 /// use embedded_graphics::{
 ///     pixelcolor::Rgb565,
 ///     prelude::*,
@@ -66,8 +67,9 @@ pub use styled::StyledPixelsIterator;
 ///     Size::new(10, 10),
 /// )
 /// .into_styled(style)
-/// .draw(&mut display)?;
+/// .draw(&mut display).await?;
 /// # Ok::<(), core::convert::Infallible>(())
+/// # };
 /// ```
 ///
 /// ## Different corner radii
@@ -77,6 +79,7 @@ pub use styled::StyledPixelsIterator;
 /// object and passing that to [`RoundedRectangle::new`](RoundedRectangle::new()).
 ///
 /// ```rust
+/// # let _ = async {
 /// use embedded_graphics::{
 ///     pixelcolor::Rgb565,
 ///     prelude::*,
@@ -100,8 +103,9 @@ pub use styled::StyledPixelsIterator;
 ///
 /// RoundedRectangle::new(Rectangle::new(Point::new(5, 5), Size::new(40, 50)), radii)
 ///     .into_styled(style)
-///     .draw(&mut display)?;
+///     .draw(&mut display).await?;
 /// # Ok::<(), core::convert::Infallible>(())
+/// # };
 /// ```
 ///
 /// ## Using `CornerRadiiBuilder`
@@ -110,6 +114,7 @@ pub use styled::StyledPixelsIterator;
 /// [`CornerRadiiBuilder`] builder.
 ///
 /// ```rust
+/// # let _ = async {
 /// use embedded_graphics::{
 ///     pixelcolor::Rgb565,
 ///     prelude::*,
@@ -133,8 +138,9 @@ pub use styled::StyledPixelsIterator;
 ///
 /// RoundedRectangle::new(Rectangle::new(Point::new(5, 5), Size::new(40, 50)), radii)
 ///     .into_styled(style)
-///     .draw(&mut display)?;
+///     .draw(&mut display).await?;
 /// # Ok::<(), core::convert::Infallible>(())
+/// # };
 /// ```
 #[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug)]
 #[cfg_attr(feature = "defmt", derive(::defmt::Format))]

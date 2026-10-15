@@ -39,29 +39,34 @@ where
     type Color = T::Color;
     type Error = T::Error;
 
-    fn draw_iter<I>(&mut self, pixels: I) -> Result<(), Self::Error>
+    async fn draw_iter<I>(&mut self, pixels: I) -> Result<(), Self::Error>
     where
         I: IntoIterator<Item = Pixel<Self::Color>>,
     {
         self.parent
             .draw_iter(pixels.into_iter().translated(self.offset))
+            .await
     }
 
-    fn fill_contiguous<I>(&mut self, area: &Rectangle, colors: I) -> Result<(), Self::Error>
+    async fn fill_contiguous<I>(&mut self, area: &Rectangle, colors: I) -> Result<(), Self::Error>
     where
         I: IntoIterator<Item = Self::Color>,
     {
         let area = area.translate(self.offset);
-        self.parent.fill_contiguous(&area, colors)
+        self.parent.fill_contiguous(&area, colors).await
     }
 
-    fn fill_solid(&mut self, area: &Rectangle, color: Self::Color) -> Result<(), Self::Error> {
+    async fn fill_solid(
+        &mut self,
+        area: &Rectangle,
+        color: Self::Color,
+    ) -> Result<(), Self::Error> {
         let area = area.translate(self.offset);
-        self.parent.fill_solid(&area, color)
+        self.parent.fill_solid(&area, color).await
     }
 
-    fn clear(&mut self, color: Self::Color) -> Result<(), Self::Error> {
-        self.parent.clear(color)
+    async fn clear(&mut self, color: Self::Color) -> Result<(), Self::Error> {
+        self.parent.clear(color).await
     }
 }
 
@@ -76,6 +81,7 @@ where
 
 #[cfg(test)]
 mod tests {
+    use crate::test_support::FutureExt as _;
     use crate::{
         draw_target::{DrawTarget, DrawTargetExt},
         geometry::Dimensions,
@@ -97,7 +103,10 @@ mod tests {
             Pixel(Point::new(0, 0), BinaryColor::On),
             Pixel(Point::new(1, 2), BinaryColor::Off),
         ];
-        translated.draw_iter(pixels.iter().copied()).unwrap();
+        translated
+            .draw_iter(pixels.iter().copied())
+            .ready()
+            .unwrap();
 
         display.assert_pattern(&[
             "    ", //
@@ -124,6 +133,7 @@ mod tests {
         let area = Rectangle::new(Point::new(1, 2), Size::new(5, 4));
         translated
             .fill_contiguous(&area, colors.iter().map(|c| BinaryColor::from(*c != 0)))
+            .ready()
             .unwrap();
 
         display.assert_pattern(&[
@@ -145,7 +155,10 @@ mod tests {
         let mut translated = display.translated(Point::new(1, 3));
 
         let area = Rectangle::new(Point::new(2, 1), Size::new(3, 4));
-        translated.fill_solid(&area, BinaryColor::On).unwrap();
+        translated
+            .fill_solid(&area, BinaryColor::On)
+            .ready()
+            .unwrap();
 
         display.assert_pattern(&[
             "      ", //
@@ -163,10 +176,10 @@ mod tests {
     fn clear() {
         let mut display = MockDisplay::new();
         let mut translated = display.translated(Point::new(1, 3));
-        translated.clear(BinaryColor::On).unwrap();
+        translated.clear(BinaryColor::On).ready().unwrap();
 
         let mut expected = MockDisplay::new();
-        expected.clear(BinaryColor::On).unwrap();
+        expected.clear(BinaryColor::On).ready().unwrap();
 
         display.assert_eq(&expected);
     }

@@ -107,7 +107,7 @@ impl<C: PixelColor> StyledDrawable<PrimitiveStyle<C>> for RoundedRectangle {
     type Color = C;
     type Output = ();
 
-    fn draw_styled<D>(
+    async fn draw_styled<D>(
         &self,
         style: &PrimitiveStyle<C>,
         target: &mut D,
@@ -120,19 +120,21 @@ impl<C: PixelColor> StyledDrawable<PrimitiveStyle<C>> for RoundedRectangle {
                 for scanline in
                     StyledScanlines::new(&style.stroke_area(self), &style.fill_area(self))
                 {
-                    scanline.draw_stroke(target, stroke_color)?;
+                    scanline.draw_stroke(target, stroke_color).await?;
                 }
             }
             (Some(stroke_color), Some(fill_color)) => {
                 for scanline in
                     StyledScanlines::new(&style.stroke_area(self), &style.fill_area(self))
                 {
-                    scanline.draw_stroke_and_fill(target, stroke_color, fill_color)?;
+                    scanline
+                        .draw_stroke_and_fill(target, stroke_color, fill_color)
+                        .await?;
                 }
             }
             (None, Some(fill_color)) => {
                 for scanline in Scanlines::new(&style.fill_area(self)) {
-                    scanline.draw(target, fill_color)?;
+                    scanline.draw(target, fill_color).await?;
                 }
             }
             (None, None) => {}
@@ -196,6 +198,7 @@ impl Iterator for StyledScanlines {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::test_support::FutureExt as _;
     use crate::{
         geometry::{Dimensions, Point, Size},
         iterator::PixelIteratorExt,
@@ -230,6 +233,7 @@ mod tests {
         Rectangle::new(Point::zero(), Size::new(20, 30))
             .into_styled(style)
             .draw(&mut expected)
+            .ready()
             .unwrap();
 
         let rounded_rect = RoundedRectangle::with_equal_corners(
@@ -239,11 +243,11 @@ mod tests {
         .into_styled(style);
 
         let mut drawable = MockDisplay::new();
-        rounded_rect.draw(&mut drawable).unwrap();
+        rounded_rect.draw(&mut drawable).ready().unwrap();
         drawable.assert_eq(&expected);
 
         let mut pixels = MockDisplay::new();
-        rounded_rect.pixels().draw(&mut pixels).unwrap();
+        rounded_rect.pixels().draw(&mut pixels).ready().unwrap();
         pixels.assert_eq(&expected);
     }
 
@@ -294,11 +298,11 @@ mod tests {
         );
 
         let mut drawable = MockDisplay::new();
-        rounded_rect.draw(&mut drawable).unwrap();
+        rounded_rect.draw(&mut drawable).ready().unwrap();
         drawable.assert_pattern(expected_pattern);
 
         let mut pixels = MockDisplay::new();
-        rounded_rect.pixels().draw(&mut pixels).unwrap();
+        rounded_rect.pixels().draw(&mut pixels).ready().unwrap();
         pixels.assert_pattern(expected_pattern);
     }
 
@@ -344,11 +348,11 @@ mod tests {
         );
 
         let mut drawable = MockDisplay::new();
-        rounded_rect.draw(&mut drawable).unwrap();
+        rounded_rect.draw(&mut drawable).ready().unwrap();
         drawable.assert_pattern(expected_pattern);
 
         let mut pixels = MockDisplay::new();
-        rounded_rect.pixels().draw(&mut pixels).unwrap();
+        rounded_rect.pixels().draw(&mut pixels).ready().unwrap();
         pixels.assert_pattern(expected_pattern);
     }
 
@@ -389,11 +393,11 @@ mod tests {
         .into_styled(PrimitiveStyleBuilder::new().fill_color(Rgb888::RED).build());
 
         let mut drawable = MockDisplay::new();
-        rounded_rect.draw(&mut drawable).unwrap();
+        rounded_rect.draw(&mut drawable).ready().unwrap();
         drawable.assert_pattern(expected_pattern);
 
         let mut pixels = MockDisplay::new();
-        rounded_rect.pixels().draw(&mut pixels).unwrap();
+        rounded_rect.pixels().draw(&mut pixels).ready().unwrap();
         pixels.assert_pattern(expected_pattern);
     }
 
@@ -426,13 +430,13 @@ mod tests {
         assert_eq!(outside.bounding_box(), item.bounding_box().offset(10));
 
         let mut display = MockDisplay::new();
-        center.draw(&mut display).unwrap();
+        center.draw(&mut display).ready().unwrap();
         assert_eq!(display.affected_area(), center.bounding_box());
         let mut display = MockDisplay::new();
-        inside.draw(&mut display).unwrap();
+        inside.draw(&mut display).ready().unwrap();
         assert_eq!(display.affected_area(), inside.bounding_box());
         let mut display = MockDisplay::new();
-        outside.draw(&mut display).unwrap();
+        outside.draw(&mut display).ready().unwrap();
         assert_eq!(display.affected_area(), outside.bounding_box());
     }
 

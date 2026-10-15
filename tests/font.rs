@@ -1,3 +1,7 @@
+#[path = "support/mod.rs"]
+mod test_support;
+use test_support::FutureExt as _;
+
 use embedded_graphics::{
     image::ImageRaw,
     mock_display::MockDisplay,
@@ -28,6 +32,7 @@ fn custom_font() {
     let mut display = MockDisplay::new();
     Text::with_baseline("01", Point::zero(), character_style, Baseline::Top)
         .draw(&mut display)
+        .ready()
         .unwrap();
     display.assert_pattern(&[
         "# # ", //

@@ -58,7 +58,7 @@ impl<C: PixelColor> StyledPixels<PrimitiveStyle<C>> for Line {
     }
 }
 
-fn draw_dotted_line<TS, D>(
+async fn draw_dotted_line<TS, D>(
     dot: &TS,
     dotted_line_points: &DottedLinePoints,
     dot_style: &PrimitiveStyle<D::Color>,
@@ -69,7 +69,9 @@ where
     D: DrawTarget,
 {
     for position in *dotted_line_points {
-        dot.translate(position).draw_styled(dot_style, target)?;
+        dot.translate(position)
+            .draw_styled(dot_style, target)
+            .await?;
     }
     Ok(())
 }
@@ -160,7 +162,7 @@ impl<C: PixelColor> StyledDrawable<PrimitiveStyle<C>> for Line {
     type Color = C;
     type Output = ();
 
-    fn draw_styled<D>(
+    async fn draw_styled<D>(
         &self,
         style: &PrimitiveStyle<C>,
         target: &mut D,
@@ -201,6 +203,7 @@ impl<C: PixelColor> StyledDrawable<PrimitiveStyle<C>> for Line {
                     &dot_style,
                     target,
                 )
+                .await
             } else {
                 draw_dotted_line(
                     &Rectangle::with_center(Point::zero(), Size::new_equal(dot_size as u32)),
@@ -208,11 +211,16 @@ impl<C: PixelColor> StyledDrawable<PrimitiveStyle<C>> for Line {
                     &dot_style,
                     target,
                 )
+                .await
             }
         } else if style.stroke_style == StrokeStyle::Dotted && style.stroke_width == 1 {
-            target.draw_iter(StyledPixelsIterator::new(self, style).step_by(2))
+            target
+                .draw_iter(StyledPixelsIterator::new(self, style).step_by(2))
+                .await
         } else {
-            target.draw_iter(StyledPixelsIterator::new(self, style))
+            target
+                .draw_iter(StyledPixelsIterator::new(self, style))
+                .await
         }
     }
 }
@@ -243,6 +251,7 @@ impl<C: PixelColor> StyledDimensions<PrimitiveStyle<C>> for Line {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::test_support::FutureExt as _;
     use crate::{
         geometry::{Dimensions, Point},
         mock_display::MockDisplay,
@@ -283,7 +292,7 @@ mod tests {
                 let styled = line.into_styled(style);
 
                 let mut display = MockDisplay::new();
-                styled.draw(&mut display).unwrap();
+                styled.draw(&mut display).ready().unwrap();
                 assert_eq!(
                     display.affected_area(),
                     styled.bounding_box(),
@@ -330,7 +339,7 @@ mod tests {
                 let bounding_box = styled.bounding_box();
 
                 let mut display = MockDisplay::new();
-                styled.draw(&mut display).unwrap();
+                styled.draw(&mut display).ready().unwrap();
                 let affected_area = display.affected_area();
 
                 // Check that the affected area is contained in the bounding box.
@@ -375,16 +384,19 @@ mod tests {
         Line::new(Point::new(2, 2), Point::new(20, 8))
             .into_styled(solid_style)
             .draw(&mut display)
+            .ready()
             .unwrap();
         Line::new(Point::new(2, 2), Point::new(20, 8))
             .into_styled(dotted_style)
             .draw(&mut display)
+            .ready()
             .unwrap();
 
         // Drawing a 1px line to check the pixel is drawn
         Line::new(Point::new(8, 8), Point::new(8, 8))
             .into_styled(dotted_style)
             .draw(&mut display)
+            .ready()
             .unwrap();
 
         display.assert_pattern(&[
@@ -407,10 +419,12 @@ mod tests {
         Line::new(Point::new(2, 2), Point::new(19, 8))
             .into_styled(solid_style)
             .draw(&mut display)
+            .ready()
             .unwrap();
         Line::new(Point::new(2, 2), Point::new(19, 8))
             .into_styled(dotted_style)
             .draw(&mut display)
+            .ready()
             .unwrap();
 
         display.assert_pattern(&[
@@ -442,10 +456,12 @@ mod tests {
         Line::new(Point::new(2, 2), Point::new(20, 8))
             .into_styled(solid_style)
             .draw(&mut display)
+            .ready()
             .unwrap();
         Line::new(Point::new(2, 2), Point::new(20, 8))
             .into_styled(dotted_style)
             .draw(&mut display)
+            .ready()
             .unwrap();
 
         display.assert_pattern(&[
@@ -526,16 +542,19 @@ mod tests {
             null_line
                 .into_styled(dotted_style)
                 .draw(&mut display)
+                .ready()
                 .unwrap();
             // overdraw wasn't allowed up to this point, this proves only one dot was drawn
             display.set_allow_overdraw(true);
             null_line
                 .into_styled(solid_style)
                 .draw(&mut display)
+                .ready()
                 .unwrap();
             null_line
                 .into_styled(solid_1px_style)
                 .draw(&mut display)
+                .ready()
                 .unwrap();
 
             display.assert_pattern(expected_pattern);
@@ -644,16 +663,24 @@ mod tests {
         display.set_allow_overdraw(true);
 
         for line in lines {
-            line.into_styled(solid_style).draw(&mut display).unwrap();
-            line.into_styled(dotted_style).draw(&mut display).unwrap();
+            line.into_styled(solid_style)
+                .draw(&mut display)
+                .ready()
+                .unwrap();
+            line.into_styled(dotted_style)
+                .draw(&mut display)
+                .ready()
+                .unwrap();
             Rectangle::new(line.start, Size::new_equal(1))
                 .into_styled(solid_fill_style)
                 .draw(&mut display)
+                .ready()
                 .unwrap();
 
             Rectangle::new(line.end, Size::new_equal(1))
                 .into_styled(solid_fill_style)
                 .draw(&mut display)
+                .ready()
                 .unwrap();
         }
 
@@ -716,10 +743,12 @@ mod tests {
 
             rect.into_styled(base_style.stroke_width(stroke_width[i]).build())
                 .draw(&mut rect_display)
+                .ready()
                 .unwrap();
             for line in lines {
                 line.into_styled(base_style.stroke_width(stroke_width[i]).build())
                     .draw(&mut lines_display)
+                    .ready()
                     .unwrap();
             }
 
@@ -745,10 +774,12 @@ mod tests {
 
             rect.into_styled(base_style.stroke_width(stroke_width[i]).build())
                 .draw(&mut rect_display)
+                .ready()
                 .unwrap();
             for line in lines {
                 line.into_styled(base_style.stroke_width(stroke_width[i]).build())
                     .draw(&mut lines_display)
+                    .ready()
                     .unwrap();
             }
 

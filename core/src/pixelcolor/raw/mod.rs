@@ -33,6 +33,7 @@
 //! an additional intensity bit.
 //!
 //! ```rust
+//! # let _ = async {
 //! use embedded_graphics::{image::ImageRaw, pixelcolor::raw::RawU4, prelude::*};
 //!
 //! /// RGBI color
@@ -96,7 +97,7 @@
 //! # use embedded_graphics::{mock_display::MockDisplay, image::Image};
 //! #
 //! # let mut display = MockDisplay::new();
-//! # Image::new(&image_raw, Point::zero()).draw(&mut display).unwrap();
+//! # Image::new(&image_raw, Point::zero()).draw(&mut display).await.unwrap();
 //! #
 //! # let expected_pixels = [
 //! #     Pixel(Point::new(0, 0), RGBI::new(false, false, true, false)),
@@ -106,10 +107,11 @@
 //! # ];
 //! #
 //! # let mut expected_display = MockDisplay::new();
-//! # expected_pixels.iter().copied().draw(&mut expected_display).unwrap();
+//! # expected_pixels.iter().copied().draw(&mut expected_display).await.unwrap();
 //! #
 //! # // assert_eq can't be used because ColorMapping isn't implemented for RGBI
 //! # assert!(display.eq(&expected_display));
+//! # };
 //! ```
 //!
 //! [`PixelColor`]: super::PixelColor

@@ -94,6 +94,7 @@ impl Iterator for Scanlines {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::test_support::FutureExt as _;
     use crate::{
         geometry::Size,
         mock_display::MockDisplay,
@@ -113,6 +114,7 @@ mod tests {
         rounded_rect
             .into_styled(PrimitiveStyle::with_fill(BinaryColor::On))
             .draw(&mut expected)
+            .ready()
             .unwrap();
 
         MockDisplay::from_points(rounded_rect.points(), BinaryColor::On).assert_eq(&expected);

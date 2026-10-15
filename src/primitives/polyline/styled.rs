@@ -37,8 +37,8 @@ pub(in crate::primitives::polyline) fn untranslated_bounding_box<C: PixelColor>(
     }
 }
 
-fn draw_thick<D>(
-    polyline: &Polyline,
+async fn draw_thick<D>(
+    polyline: &Polyline<'_>,
     style: &PrimitiveStyle<D::Color>,
     stroke_color: D::Color,
     target: &mut D,
@@ -50,7 +50,7 @@ where
         let rect = line.to_rectangle();
 
         if !rect.is_zero_sized() {
-            target.fill_solid(&rect, stroke_color)?;
+            target.fill_solid(&rect, stroke_color).await?;
         }
     }
 
@@ -143,7 +143,7 @@ impl<C: PixelColor> StyledDrawable<PrimitiveStyle<C>> for Polyline<'_> {
     type Color = C;
     type Output = ();
 
-    fn draw_styled<D>(
+    async fn draw_styled<D>(
         &self,
         style: &PrimitiveStyle<C>,
         target: &mut D,
@@ -154,7 +154,11 @@ impl<C: PixelColor> StyledDrawable<PrimitiveStyle<C>> for Polyline<'_> {
         if let Some(stroke_color) = style.stroke_color {
             match style.stroke_width {
                 0 => Ok(()),
-                1 => target.draw_iter(self.points().map(|point| Pixel(point, stroke_color))),
+                1 => {
+                    target
+                        .draw_iter(self.points().map(|point| Pixel(point, stroke_color)))
+                        .await
+                }
                 _ => {
                     if self.translate != Point::zero() {
                         draw_thick(
@@ -163,8 +167,9 @@ impl<C: PixelColor> StyledDrawable<PrimitiveStyle<C>> for Polyline<'_> {
                             stroke_color,
                             &mut target.translated(self.translate),
                         )
+                        .await
                     } else {
-                        draw_thick(self, style, stroke_color, target)
+                        draw_thick(self, style, stroke_color, target).await
                     }
                 }
             }
@@ -183,6 +188,7 @@ impl<C: PixelColor> StyledDimensions<PrimitiveStyle<C>> for Polyline<'_> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::test_support::FutureExt as _;
     use crate::{
         geometry::Point,
         iterator::PixelIteratorExt,
@@ -208,6 +214,7 @@ mod tests {
             .translate(Point::new(-5, -5))
             .into_styled(PrimitiveStyle::with_stroke(BinaryColor::On, 1))
             .draw(&mut display)
+            .ready()
             .unwrap();
 
         display.assert_pattern(&[
@@ -227,6 +234,7 @@ mod tests {
         Polyline::new(&PATTERN)
             .into_styled(PrimitiveStyle::with_stroke(BinaryColor::On, 1))
             .draw(&mut display)
+            .ready()
             .unwrap();
 
         display.assert_pattern(&[
@@ -251,6 +259,7 @@ mod tests {
         Polyline::new(&PATTERN)
             .into_styled(PrimitiveStyle::with_stroke(BinaryColor::On, 4))
             .draw(&mut display)
+            .ready()
             .unwrap();
 
         display.assert_pattern(&[
@@ -283,7 +292,7 @@ mod tests {
             Rectangle::new(Point::zero(), Size::new(28, 10))
         );
 
-        styled.draw(&mut display).unwrap();
+        styled.draw(&mut display).ready().unwrap();
 
         display.assert_pattern(&[
             "         #                  ",
@@ -308,9 +317,9 @@ mod tests {
             .translate(Point::new(2, 3))
             .into_styled(PrimitiveStyle::with_stroke(BinaryColor::On, 4));
 
-        pl.draw(&mut d1).unwrap();
+        pl.draw(&mut d1).ready().unwrap();
 
-        pl.pixels().draw(&mut d2).unwrap();
+        pl.pixels().draw(&mut d2).ready().unwrap();
 
         d1.assert_eq(&d2);
     }
@@ -387,6 +396,7 @@ mod tests {
             Polyline::new(points)
                 .into_styled(PrimitiveStyle::with_stroke(BinaryColor::On, 4))
                 .draw(&mut display)
+                .ready()
                 .unwrap();
 
             display.assert_pattern_with_message(expected, |f| write!(f, "Join {case}"));
@@ -400,6 +410,7 @@ mod tests {
         Polyline::new(&[Point::new(2, 5), Point::new(25, 5), Point::new(5, 2)])
             .into_styled(PrimitiveStyle::with_stroke(BinaryColor::On, 5))
             .draw(&mut display)
+            .ready()
             .unwrap();
 
         display.assert_pattern(&[
@@ -425,6 +436,7 @@ mod tests {
         Polyline::new(&PATTERN)
             .into_styled(base_style.build())
             .draw(&mut expected_display)
+            .ready()
             .unwrap();
 
         for alignment in [StrokeAlignment::Inside, StrokeAlignment::Outside].iter() {
@@ -433,6 +445,7 @@ mod tests {
             Polyline::new(&PATTERN)
                 .into_styled(base_style.stroke_alignment(*alignment).build())
                 .draw(&mut display)
+                .ready()
                 .unwrap();
 
             display.assert_eq_with_message(&expected_display, |f| write!(f, "{alignment:?}"));
@@ -449,12 +462,14 @@ mod tests {
         Polyline::new(&PATTERN)
             .into_styled(base_style)
             .draw(&mut expected_display)
+            .ready()
             .unwrap();
 
         Polyline::new(&PATTERN)
             .into_styled(base_style)
             .pixels()
             .draw(&mut display)
+            .ready()
             .unwrap();
 
         display.assert_eq(&expected_display);
@@ -488,7 +503,7 @@ mod tests {
         let styled = pl.into_styled(PrimitiveStyle::with_stroke(Rgb565::BLUE, 5));
 
         let mut display = MockDisplay::new();
-        styled.draw(&mut display).unwrap();
+        styled.draw(&mut display).ready().unwrap();
         assert_eq!(display.affected_area(), styled.bounding_box());
 
         assert_eq!(
@@ -572,6 +587,7 @@ mod tests {
             .into_styled(PrimitiveStyle::with_stroke(Rgb565::GREEN, 2))
             .pixels()
             .draw(&mut display)
+            .ready()
             .unwrap();
 
         display.assert_eq(&MockDisplay::new());
@@ -585,6 +601,7 @@ mod tests {
         Polyline::new(&[Point::new(10, 5), Point::new(5, 10), Point::new(10, 10)])
             .into_styled(PrimitiveStyle::with_stroke(Rgb565::RED, 5))
             .draw(&mut display)
+            .ready()
             .unwrap();
     }
 
@@ -602,7 +619,7 @@ mod tests {
         assert_eq!(bb, Rectangle::new(Point::new(1, 11), Size::new(39, 49)));
 
         let mut display = MockDisplay::new();
-        line.draw(&mut display).unwrap();
+        line.draw(&mut display).ready().unwrap();
 
         // Check no pixels are drawn outside bounding box
         assert_eq!(display.affected_area(), bb);
@@ -625,7 +642,7 @@ mod tests {
         assert_eq!(bb, Rectangle::new(Point::new(4, 26), Size::new(36, 44)));
 
         let mut display = MockDisplay::new();
-        line.draw(&mut display).unwrap();
+        line.draw(&mut display).ready().unwrap();
 
         // Check no pixels are drawn outside bounding box
         assert_eq!(display.affected_area(), bb);
